@@ -6,8 +6,8 @@ fontes = \
 	 src/Ewrite.c
 .SUFFIXES: .c .h .o
 OS= $(shell uname -s)
-CFLAGS=-I./include/ -O2  -ftree-vectorize
-LDFLAGS=-L/usr/local/usr/local/lib
+CFLAGS=-I./include/ -O2 
+LDFLAGS=-L./lib
 
 OBJS= $(fontes:%.c=%.o)
 

@@ -15,9 +15,26 @@ typedef struct ELEMT{
   int body;
 }ELEMT;
 
+typedef struct NODESET{
+  int *node;
+  int *inode;
+  int *nset;
+  int  total;
+  int *g;
+  /* 1 - constraintemp */  
+  /* 2 - ndalsources   */  
+  /* 3 - constraindisp */  
+  /* 4 - nodalforces   */
+  char tc;
+  char dc;
+  char fr;
+  char sr;
+}NODESET;
+
 /*variaveis globais*/
-long nnode,nelem,nbody;
+long nnode,nelem,nbody,nnodeset;
 int dim;
 NODE *node;
-ELEMT *elemt; 
+ELEMT *elemt;
+NODESET nodeset;
 #endif /* EGLOBAL_H */

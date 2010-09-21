@@ -47,8 +47,8 @@
 #include "stddef.h"
 
 /* EXODUS II version number */
-#define EX_API_VERS 4.84
-#define EX_API_VERS_NODOT 484
+#define EX_API_VERS 4.96
+#define EX_API_VERS_NODOT 496
 #define EX_VERS EX_API_VERS
 
 
@@ -137,6 +137,7 @@ extern "C" {
     EX_INQ_ELS_PROP        = 44,     /**< inquire number of properties stored per elem set      */
     EX_INQ_EDGE_MAP        = 45,     /**< inquire number of edge maps                     */
     EX_INQ_FACE_MAP        = 46,     /**< inquire number of face maps                     */
+    EX_INQ_COORD_FRAMES    = 47,     /**< inquire number of coordinate frames */
     EX_INQ_INVALID         = -1};
 
   typedef enum ex_inquiry ex_inquiry;
@@ -419,6 +420,8 @@ extern "C" {
   EXODUS_EXPORT int ex_get_side_set_node_count(int exoid,
 					       int side_set_id,
 					       int *side_set_node_cnt_list);
+  EXODUS_EXPORT int ex_get_concat_side_set_node_count(int exoid,
+						      int *side_set_node_cnt_list);
   EXODUS_EXPORT int ex_get_side_set_dist_fact (int   exoid,
 					       int   side_set_id,
 					       void *side_set_dist_fact);
@@ -685,6 +688,13 @@ extern "C" {
 					     int ent_start,
 					     int ent_count, 
 					     const int  *elem_map);
+
+  EXODUS_EXPORT int ex_put_partial_set_dist_fact (int   exoid,
+						  ex_entity_type set_type,
+						  int   set_id,
+						  int   offset,
+						  int   num_to_put,
+						  const void *set_dist_fact);
 
   EXODUS_EXPORT int ex_put_prop (int   exoid,
 				 ex_entity_type obj_type,

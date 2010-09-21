@@ -185,6 +185,9 @@
 #define VAR_CONN(num)            ex_catstr("connect",num)
                                                 /* element connectivity for  */
                                                 /*   element block num       */
+#define VAR_EBEPEC(num)          ex_catstr("ebepecnt",num)
+                                                /* array containing number of entity per */
+						/*  entity for n-sided face/element blocks */
 #define VAR_ATTRIB(num)         ex_catstr("attrib",num)
                                                 /* list of attributes for    */
                                                 /*   element block num       */
@@ -239,6 +242,9 @@
 #define VAR_FBCONN(num)           ex_catstr("fbconn",num)
                                                 /* face connectivity for     */
                                                 /*   face block num          */
+#define VAR_FBEPEC(num)           ex_catstr("fbepecnt",num)
+                                                /* array containing number of entity per */
+						/*  entity for n-sided face/element blocks */
 #define VAR_FATTRIB(num)          ex_catstr("fattrb",num)
                                                 /* list of attributes for    */
                                                 /*   face block num          */
@@ -481,11 +487,11 @@
                                                 /* list of the numth property*/
                                                 /*   for all node maps       */
 
-#define NUM_CFRAMES  "num_cframes"
-#define NUM_CFRAME9  "num_cframes_9"
-#define FRAME_COORDS "frame_coordinates"
-#define FRAME_IDS    "frame_ids"
-#define FRAME_TAGS   "frame_tags"
+#define DIM_NUM_CFRAMES  "num_cframes"
+#define DIM_NUM_CFRAME9  "num_cframes_9"
+#define VAR_FRAME_COORDS "frame_coordinates"
+#define VAR_FRAME_IDS    "frame_ids"
+#define VAR_FRAME_TAGS   "frame_tags"
 
 
 enum ex_element_type {

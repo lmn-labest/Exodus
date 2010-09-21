@@ -4,55 +4,68 @@
 #include<stdlib.h>
 #include<string.h>
 
-void write_mef(char *s){
+void write_mef(char *ins){
 /*===*/
   FILE *fileout[3];
-  char s1[200],s2[200],s3[200];
+  char s[4][200];
 /*===================================================================*/
 /**/
 /*=== Manipulação do nome do arquivo*/  
-  strcpy(s1,s);
-  strcpy(s2,s);
-  strcpy(s3,s);
-  strcat(s1,".dat");
-  strcat(s2,"_coor.dat");
-  strcat(s3,"_elem.dat");
+  strcpy(s[0],ins);
+  strcpy(s[1],ins);
+  strcpy(s[2],ins);
+  strcpy(s[3],ins);
+  strcat(s[0],".dat");
+  strcat(s[1],"_coor.dat");
+  strcat(s[2],"_elem.dat");
+  strcat(s[3],"_restricion.dat");
 /*===================================================================*/
 /**/  
 /*=== arquivo principal*/ 
-  fileout[0]=fopen(s1,"w");
+  fileout[0]=fopen(s[0],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s1);
+    printf("Erro na abertura do arquivo:%s\n",s[0]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s\n",s1);
+  printf("\nsucesso na abertura do arquivo:%s",s[0]);
 /*...................................................................*/
 /**/
-/*...*/  
-  write_head_mef(fileout[0],s2,s3);
+/*...*/
+  write_head_mef(fileout[0],s[1],s[2],s[3]);
   fclose(fileout[0]);
 /*===================================================================*/
 /**/
 /*=== arquivo da coordenadas*/  
-  fileout[1]=fopen(s2,"w");
+  fileout[1]=fopen(s[1],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s2);
+    printf("Erro na abertura do arquivo:%s\n",s[1]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s\n",s2);
+  printf("\nsucesso na abertura do arquivo:%s",s[1]);
   write_mef_coor(fileout[1]);
   fclose(fileout[1]);
 /*===================================================================*/
 /**/
 /*=== arquivo das connectividades*/  
-  fileout[2]=fopen(s3,"w");
+  fileout[2]=fopen(s[2],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s3);
+    printf("Erro na abertura do arquivo:%s\n",s[2]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s\n",s3);
+  printf("\nsucesso na abertura do arquivo:%s",s[2]);
   write_mef_cell(fileout[2]);
   fclose(fileout[2]);
+/*===================================================================*/
+/**/
+/*=== arquivo das restricoes*/  
+  fileout[3]=fopen(s[3],"w");
+  if (fileout==NULL){ 
+    printf("Erro na abertura do arquivo:%s\n",s[3]);
+    exit(1);
+  } 
+  printf("\nsucesso na abertura do arquivo:%s",s[3]);
+  write_restricion(fileout[3]);
+  fclose(fileout[3]);
 /*===================================================================*/
 }
 /*********************************************************************/
@@ -70,7 +83,7 @@ void write_mef(char *s){
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
  *********************************************************************/  
-void write_head_mef(FILE *f,char *file_coor,char *file_elem)
+void write_head_mef(FILE *f,char *file1,char *file2,char *file3)
 {
 /*===*/  
   long i;
@@ -90,9 +103,10 @@ void write_head_mef(FILE *f,char *file_coor,char *file_elem)
   fprintf(f,"end materials\n");
 /*...................................................................*/
 /**/
-/*...*/  
-  fprintf(f,"insert %s\n",file_coor);
-  fprintf(f,"insert %s\n",file_elem);
+/*...*/
+  fprintf(f,"insert %s\n",file1);
+  fprintf(f,"insert %s\n",file2);
+  fprintf(f,"insert %s\n",file3);
 /*...................................................................*/
 /**/
   fprintf(f,"end mesh\n");
@@ -176,7 +190,7 @@ void write_mef_cell(FILE *f){
 /**/  
 /*===*/
   tp=elemt[0].type;
-  fprintf(stderr,"\nEscrevendo Elementos...");
+  fprintf(stderr,"Escrevendo Elementos...");
 /*...*/
   switch(tp){
 /*---*/    
@@ -197,8 +211,8 @@ void write_mef_cell(FILE *f){
       fprintf(stderr,"\nHexaedros");
       fprintf(f,"hexa8\n");
       for( i = 0 ; i < nelem ; i ++){
-	fprintf(f,"%ld %ld %ld %ld " 
-	          "%ld %ld %ld %ld %ld " 
+	fprintf(f,"%10ld %10ld %10ld %10ld " 
+	          "%10ld %10ld %10ld %10ld %10ld " 
 	          "%d\n",i+1
 	         ,elemt[i].node[0],elemt[i].node[4],elemt[i].node[7]
 		 ,elemt[i].node[3],elemt[i].node[1],elemt[i].node[5]
@@ -223,4 +237,58 @@ void write_mef_cell(FILE *f){
 /*===================================================================*/  
 }
 /*********************************************************************/
+/*********************************************************************
+ *                :                                                  *
+ *                                                                   *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * f         - arquivo de saida                                      *
+ * file_coor - nome do arquivo de coordenadas                        *
+ * file_elem - nome do arquivo de elementos                          *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+void write_restricion(FILE *f)
+{
+/*===*/  
+  int i,j,k,nset;
+  int group;
+  int *aux;
+  int node1;
+  int consttemp;
+/*===================================================================*/  
+/**/
+/*===*/  
+/*...*/
+/*temp*/  
+  node1    = 0;
+  aux = (int*) malloc(nodeset.total*sizeof(int));
+/*...................................................................*/  
+  if( nodeset.tc == 1) {
+    for( i = 0; i< nnodeset; i++){
+      group = nodeset.g[i];
+    
+/*constrian temp*/  
+      if( group == 1){
+        nset = nodeset.nset[i];
+        k      = nodeset.inode[i];
+        for(j=0;j<nset;j++){
+          aux[j+node1] = nodeset.node[k+j];
+        }	
+        node1 += nset;
+      }
+    }
+  
+    fprintf(f,"constraintemp\n");
+    for(j=0;j<node1;j++){
+     fprintf(f,"%d %d\n",aux[j],1);
+    }	
+    fprintf(f,"end constraintemp\n");
+  }  
+/*...................................................................*/
+  free(aux);
+/*===================================================================*/  
+}
 

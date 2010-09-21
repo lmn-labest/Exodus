@@ -6,7 +6,14 @@ void read_exo(char *file_name)
 /*===*/
   int CPU_ws,IO_ws;
   int exoid,error;
-  float version;  
+  float version;
+/*...................................................................*/  
+  int numset,numdf;
+  int id;
+  int *ids;
+  int i,j;
+  int *node_list;
+/*...................................................................*/  
 /*===================================================================*/
 /**/
   CPU_ws = sizeof(double);
@@ -45,7 +52,13 @@ void read_exo(char *file_name)
   fprintf(stderr,"elementos lidos.\n");
 /*===================================================================*/
 /**/
-/*===fecahndo arquivo*/
+/*===lendo carregamentos*/
+  fprintf(stderr,"Lendo carregamentos...\n");
+  read_carg_exo(exoid);
+  fprintf(stderr,"elementos lidos.\n");
+/*===================================================================*/
+/**/
+/*===fechando arquivo*/
   error = ex_close(exoid);
   error_exo (error,"Fechar");
 }
@@ -67,10 +80,24 @@ void read_head_exo(int exoid)
 /*===================================================================*/
 /**/ 
 /*===*/
-  dim   = edim;
-  nnode = enode;
-  nelem = eelem;
-  nbody = nelemblock;
+/*...*/  
+  fprintf(stderr,"\n****************\n"
+                 "dim     = %d \n"
+                 "nnode   = %d \n"
+		 "nelm    = %d \n" 
+		 "mat     = %d \n"
+		 "nodeset = %d \n"
+		 "****************\n"
+		 ,edim,enode,eelem,nelemblock,enodeset);  
+/*...................................................................*/  
+
+/*...*/  
+  dim      = edim;
+  nnode    = enode;
+  nelem    = eelem;
+  nbody    = nelemblock;
+  nnodeset = enodeset;
+/*...................................................................*/  
 /*===================================================================*/  
 }
 /*********************************************************************/
@@ -91,7 +118,7 @@ void read_coor_exo(int exoid){
 /*===================================================================*/
 /**/
 /*===*/
-   node = (NODE *) calloc(nnode,sizeof(NODE));
+  node = (NODE *) calloc(nnode,sizeof(NODE));
   for(i=0;i<nnode;i++){
     node[i].x = x[i];    
     node[i].y = y[i];    
@@ -152,6 +179,8 @@ void error_exo(int error , char *field){
     fprintf(stderr,"Warning na leitura do %s %d\n",field,error);
 }
 /*********************************************************************/ 
+
+/*********************************************************************/ 
 int type_elm(char *s)
 {
   short i;
@@ -163,6 +192,73 @@ int type_elm(char *s)
 }
 /*********************************************************************/
 
+/*********************************************************************/
+void read_carg_exo(int exoid){
+/*===*/  
+  int i,j,k;
+  int error = 0;
+  int *ids=NULL;
+  int *node_list=NULL;
+  int numset,numdf;
+/*===================================================================*/  
+  
+/*===*/  
+  
+/*... numero total de grupos de nos com restricoes*/
+/*...*/  
+  nodeset.g = (int *) malloc(nnodeset*sizeof(int));
+  nodeset.tc    = 1;
+  nodeset.g[0]  = 1;
+  nodeset.g[1]  = 1;
+/*.................................................*/  
+  ids = (int *) calloc(nnodeset, sizeof(int));
+  error = ex_get_node_set_ids (exoid, ids);
+#if _DEBUG
+  for(i=0;i<nnodeset;i++){
+    fprintf(stderr,"%d ids=%d\n",i+1,ids[i]);
+  }
+#endif
+/*...................................................................*/  
+  
+  nodeset.inode = (int *) calloc(nnodeset, sizeof(int));
+  nodeset.nset  = (int *) calloc(nnodeset, sizeof(int));
+  for(i=0;i<nnodeset;i++){
+    error = ex_get_node_set_param (exoid,ids[i],&numset,&numdf);
+    nodeset.nset[i]   = numset;
+  }
+
+  for(i=1;i<nnodeset;i++)
+    nodeset.inode[i]  = nodeset.nset[i-1] + nodeset.inode[i-1];
+  
+  nodeset.total  = nodeset.inode[nnodeset-1] + nodeset.nset[nnodeset-1];
+  nodeset.node   = (int *) calloc(nodeset.total, sizeof(int));
+  
+  for(i=0;i<nnodeset;i++){
+#if _DEBUG
+    fprintf(stderr,"grupo = %d pont = %d length = %d\n"
+	          ,i,nodeset.inode[i]
+	          ,nodeset.nset[i]);
+#endif
+    node_list = (int *) calloc(nodeset.nset[i], sizeof(int));
+    error = ex_get_node_set (exoid, ids[i], node_list);
+    for(j=0;j<nodeset.nset[i];j++){
+      k = nodeset.inode[i];
+      nodeset.node[k+j] = node_list[j];
+#if _DEBUG
+      fprintf(stderr,"%d no = %d\n",j+1,node_list[j]);
+#endif
+    }
+    free(node_list);
+  }
+  free(ids);
+#if _DEBUG
+  for(i=0;i<nodeset.total;i++){
+    fprintf(stderr,"%d no = %d\n",i+1,nodeset.node[i]);
+  }  
+#endif
+/*===================================================================*/  
+}
+/*********************************************************************/
 
 
   

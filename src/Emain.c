@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     write_mef(argv[2]);
 /*...................................................................*/   
   }
-  printf("nodes = %ld numel = %ld\n",nnode,nelem);
+  printf("\nnodes = %ld numel = %ld\n",nnode,nelem);
 /*===================================================================*/
  
 return 0;  

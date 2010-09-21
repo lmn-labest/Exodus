@@ -146,12 +146,19 @@ EXODUS_EXPORT int ex_get_block          (int, ex_entity_type, int, char*, int*, 
 /*  Write All Edge Face and Element Block Parameters */
 EXODUS_EXPORT int ex_put_concat_all_blocks(int, const ex_block_params*);
 
+EXODUS_EXPORT int ex_put_entity_count_per_polyhedra (int, ex_entity_type, int, const int*);
+
+EXODUS_EXPORT int ex_get_entity_count_per_polyhedra (int, ex_entity_type, int, int*);
+
 /*  Write Edge Face or Element Block Connectivity */
 EXODUS_EXPORT int ex_put_conn           (int, ex_entity_type, int, const int*, const int*,
                                          const int*);
 
 /*  Read Edge Face or Element Block Connectivity */
 EXODUS_EXPORT int ex_get_conn           (int, ex_entity_type, int, int*, int*, int*);
+
+/*  Read Partial Edge Face or Element Block Connectivity */
+EXODUS_EXPORT int ex_get_n_conn         (int, ex_entity_type, int, int, int, int*, int*, int*);
 
 /*  Write Edge Face or Element Block Attributes */
 EXODUS_EXPORT int ex_put_attr           (int, ex_entity_type, int, const void*);
