@@ -24,10 +24,10 @@ void write_mef(char *ins){
 /*=== arquivo principal*/ 
   fileout[0]=fopen(s[0],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s[0]);
+    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[0]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s",s[0]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[0]);
 /*...................................................................*/
 /**/
 /*...*/
@@ -38,10 +38,10 @@ void write_mef(char *ins){
 /*=== arquivo da coordenadas*/  
   fileout[1]=fopen(s[1],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s[1]);
+    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[1]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s",s[1]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[1]);
   write_mef_coor(fileout[1]);
   fclose(fileout[1]);
 /*===================================================================*/
@@ -49,10 +49,10 @@ void write_mef(char *ins){
 /*=== arquivo das connectividades*/  
   fileout[2]=fopen(s[2],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s[2]);
+    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[2]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s",s[2]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[2]);
   write_mef_cell(fileout[2]);
   fclose(fileout[2]);
 /*===================================================================*/
@@ -60,10 +60,10 @@ void write_mef(char *ins){
 /*=== arquivo das restricoes*/  
   fileout[3]=fopen(s[3],"w");
   if (fileout==NULL){ 
-    printf("Erro na abertura do arquivo:%s\n",s[3]);
+    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[3]);
     exit(1);
   } 
-  printf("\nsucesso na abertura do arquivo:%s",s[3]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[3]);
   write_restricion(fileout[3]);
   fclose(fileout[3]);
 /*===================================================================*/
@@ -110,7 +110,7 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3)
 /*...................................................................*/
 /**/
   fprintf(f,"end mesh\n");
-/*===================================================================*/  
+  fprintf(f,"stop\n");
 }
 /*********************************************************************/
 /**/
@@ -131,7 +131,7 @@ void write_mef_coor(FILE *f)
 /*===================================================================*/
 /**/
 /*===*/
-  fprintf(stderr,"Escrevendo coordenadas...");
+  fprintf(stderr,"\nEscrevendo coordenadas...");
   fprintf(f,"coordinates\n");
 /*...*/  
   switch(dim){
@@ -151,8 +151,9 @@ void write_mef_coor(FILE *f)
 /*---3 dimencoes*/      
     case 3:
       for (i = 0 ; i < nnode ; i++)
-        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x ,
-	         node[i].y, node[i].z);
+/*gambiarra para o cilindro*/	
+        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x/10000 ,
+	         node[i].y/10000, node[i].z/10000);
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -190,7 +191,7 @@ void write_mef_cell(FILE *f){
 /**/  
 /*===*/
   tp=elemt[0].type;
-  fprintf(stderr,"Escrevendo Elementos...");
+  fprintf(stderr,"\nEscrevendo Elementos...");
 /*...*/
   switch(tp){
 /*---*/    
@@ -238,7 +239,7 @@ void write_mef_cell(FILE *f){
 }
 /*********************************************************************/
 /*********************************************************************
- *                :                                                  *
+ * GAMBIARRA PARA O POCO:                                            *
  *                                                                   *
  *------------------------------------------------------------------ *
  * parametros de entrada :                                           *
@@ -252,43 +253,136 @@ void write_mef_cell(FILE *f){
  *********************************************************************/  
 void write_restricion(FILE *f)
 {
-/*===*/  
+/*===*/
+#define F 2781.581653
   int i,j,k,nset;
-  int group;
-  int *aux;
-  int node1;
-  int consttemp;
+  int type,*id,*b;
+  int *aux,*ids;
+  double x,y;
+  double fy,fx;
 /*===================================================================*/  
-/**/
-/*===*/  
 /*...*/
-/*temp*/  
-  node1    = 0;
-  aux = (int*) malloc(nodeset.total*sizeof(int));
-/*...................................................................*/  
-  if( nodeset.tc == 1) {
-    for( i = 0; i< nnodeset; i++){
-      group = nodeset.g[i];
-    
-/*constrian temp*/  
-      if( group == 1){
-        nset = nodeset.nset[i];
-        k      = nodeset.inode[i];
-        for(j=0;j<nset;j++){
-          aux[j+node1] = nodeset.node[k+j];
-        }	
-        node1 += nset;
-      }
+  fprintf(stderr,"\nEscrevendo restricion..");
+  insertionSort(nodeset.node,nodeset.id,nodeset.total);
+/*  removenode(nodeset.node,nodeset.id,nodeset.total);*/
+  fprintf(stderr,"\nconstraintemp...");
+  fprintf(f,"constraintemp\n");
+    for(i=0;i<nodeset.total;i++){
+      if( nodeset.id[i] == 3 || nodeset.id[i] == 4)  
+        fprintf(f,"%10d %2d\n",nodeset.node[i],1);
     }
-  
-    fprintf(f,"constraintemp\n");
-    for(j=0;j<node1;j++){
-     fprintf(f,"%d %d\n",aux[j],1);
-    }	
-    fprintf(f,"end constraintemp\n");
+  fprintf(f,"end constraintemp\n");
+/*...*/  
+  fprintf(stderr,"\nnodalsources...");
+  fprintf(f,"nodalsources\n");
+    for(i=0;i<nodeset.total;i++){
+      if( nodeset.id[i] == 3)  
+        fprintf(f,"%10d %lf\n",nodeset.node[i], 50.0);
+      if( nodeset.id[i] == 4)  
+        fprintf(f,"%10d %lf\n",nodeset.node[i],200.0);
+    }
+  fprintf(f,"end nodalsources\n");
+  fprintf(stderr,"\nconstraindisp...");
+  b = (int*) calloc(nodeset.total,sizeof(int));
+  removenode(nodeset.node,b,nodeset.total);
+  fprintf(f,"constraindisp\n");
+    for(i=0;i<nodeset.total;i++){
+      j = nodeset.node[i];
+      if( nodeset.id[i] == 1 || nodeset.id[i] == 2){
+	if(!b[i])
+	  fprintf(f,"%10d %s\n",j,"0 0 1");
+      }	  
+      if( nodeset.id[i] == 3) { 
+	if(!b[i])
+         fprintf(f,"%10d %s\n",j,"1 1 0");
+      }
+      if(b[i] == -1 && nodeset.id[i] == 6 ){
+        fprintf(f,"%10d %s\n",j,"1 1 1");
+      }
+      if( nodeset.id[i] == 5) {
+          fprintf(f,"%10d %s\n",j,"0 0 1");
+      }	
+    }
+  fprintf(f,"end constraindisp\n");
+  fprintf(stderr,"\nnodalforces...");
+  fprintf(f,"nodalforces\n");
+    for(i=0;i<nodeset.total;i++){
+      if( nodeset.id[i] == 5) {
+	  j = nodeset.node[i];
+	  x = node[j].x;
+	  y = node[j].y; 
+	  fx = (x/sqrt(x*x + y*y)) * 2 * F;
+	  fy = (y/sqrt(x*x + y*y)) * 2 * F;
+          fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
+      }	
+      if( nodeset.id[i] == 4 && !b[i]  ) {
+	  j = nodeset.node[i];
+	  x = node[j].x;
+	  y = node[j].y; 
+	  fx = (x/sqrt(x*x + y*y)) * 4 * F;
+	  fy = (y/sqrt(x*x + y*y)) * 4 * F;
+          fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
+      }	
+    } 
+  fprintf(f,"end nodalforces\n");
+  fprintf(stderr,"\nintialtemp...");
+  fprintf(f,"initialtemp\n");
+    for(j=1;j<=nnode;j++){
+//    k =1;
+//    for(i=0;i<nodeset.total;i++){
+//     if(j==nodeset.node[i]){
+//        if( nodeset.id[i] == 4) {
+//	  k = 0;
+//	  fprintf(f,"%10d %20.8e\n",j,200.0);
+//	  break;
+//	}
+//      }
+//    }
+//    if(k)
+        fprintf(f,"%10d %20.8e\n",j,50.0);
   }  
+  fprintf(f,"end initialtemp\n");
 /*...................................................................*/
-  free(aux);
+  fprintf(f,"return\n");
+  fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
 }
 
+void insertionSort(int *v,int *b,int n)
+{
+ int i, j, chave,chave1;
+ 
+ for(j=1; j<n; j++) 
+ {
+   chave  = v[j];
+   chave1 = b[j];
+   i = j-1;
+   while(i >= 0 && v[i] > chave)
+   {
+     v[i+1] = v[i];
+     b[i+1] = b[i];
+     i--;
+   }		
+   v[i+1] = chave;
+   b[i+1] = chave1;
+ }  
+}
+
+void removenode(int *v,int *b, int n)
+{
+  int i,j;
+  int aux1,aux2;
+
+  for(i=0;i<n;i++){
+    aux1=v[i];
+    for(j=i+1;j<n;j++){
+       aux2=v[j];
+       if(aux2 == aux1){
+	 b[j]   = -1;
+         b[j-1] = -1;
+       }	 
+       else
+	 break;
+    }  
+  }  
+}

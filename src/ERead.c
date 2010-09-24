@@ -55,7 +55,7 @@ void read_exo(char *file_name)
 /*===lendo carregamentos*/
   fprintf(stderr,"Lendo carregamentos...\n");
   read_carg_exo(exoid);
-  fprintf(stderr,"elementos lidos.\n");
+  fprintf(stderr,"carregamentos.\n");
 /*===================================================================*/
 /**/
 /*===fechando arquivo*/
@@ -206,13 +206,12 @@ void read_carg_exo(int exoid){
   
 /*... numero total de grupos de nos com restricoes*/
 /*...*/  
-  nodeset.g = (int *) malloc(nnodeset*sizeof(int));
-  nodeset.tc    = 1;
-  nodeset.g[0]  = 1;
-  nodeset.g[1]  = 1;
+//nodeset.g = (int *) malloc(nnodeset*sizeof(int));
 /*.................................................*/  
+
   ids = (int *) calloc(nnodeset, sizeof(int));
   error = ex_get_node_set_ids (exoid, ids);
+
 #if _DEBUG
   for(i=0;i<nnodeset;i++){
     fprintf(stderr,"%d ids=%d\n",i+1,ids[i]);
@@ -222,6 +221,7 @@ void read_carg_exo(int exoid){
   
   nodeset.inode = (int *) calloc(nnodeset, sizeof(int));
   nodeset.nset  = (int *) calloc(nnodeset, sizeof(int));
+  
   for(i=0;i<nnodeset;i++){
     error = ex_get_node_set_param (exoid,ids[i],&numset,&numdf);
     nodeset.nset[i]   = numset;
@@ -232,30 +232,38 @@ void read_carg_exo(int exoid){
   
   nodeset.total  = nodeset.inode[nnodeset-1] + nodeset.nset[nnodeset-1];
   nodeset.node   = (int *) calloc(nodeset.total, sizeof(int));
+  nodeset.id     = (int *) calloc(nodeset.total, sizeof(int));
   
   for(i=0;i<nnodeset;i++){
+
 #if _DEBUG
     fprintf(stderr,"grupo = %d pont = %d length = %d\n"
 	          ,i,nodeset.inode[i]
 	          ,nodeset.nset[i]);
 #endif
+
     node_list = (int *) calloc(nodeset.nset[i], sizeof(int));
     error = ex_get_node_set (exoid, ids[i], node_list);
     for(j=0;j<nodeset.nset[i];j++){
       k = nodeset.inode[i];
       nodeset.node[k+j] = node_list[j];
+      nodeset.id[k+j]   = ids[i];
 #if _DEBUG
       fprintf(stderr,"%d no = %d\n",j+1,node_list[j]);
 #endif
+
     }
     free(node_list);
   }
   free(ids);
+
 #if _DEBUG
   for(i=0;i<nodeset.total;i++){
-    fprintf(stderr,"%d no = %d\n",i+1,nodeset.node[i]);
+    fprintf(stderr,"%d no = %d id = %d\n"
+	          ,i+1,nodeset.node[i],nodeset.id[i]);
   }  
 #endif
+ 
 /*===================================================================*/  
 }
 /*********************************************************************/

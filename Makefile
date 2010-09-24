@@ -6,14 +6,14 @@ fontes = \
 	 src/Ewrite.c
 .SUFFIXES: .c .h .o
 OS= $(shell uname -s)
-CFLAGS=-I./include/ -O2 
-LDFLAGS=-L./lib
+CFLAGS=-I./include/ -O2 -DDEBUG 
+LDFLAGS=-L./lib -lm -lexoIIv2c -lnetcdf
 
 OBJS= $(fontes:%.c=%.o)
 
 build:	$(OBJS) 
 	ls bin || mkdir -p bin
-	$(CC)  $(OBJS)  -o bin/$(name)  $(LDFLAGS) -lexoIIv2c -lnetcdf 
+	$(CC)  $(OBJS)  -o bin/$(name)  $(LDFLAGS)  
 list:
 	(cd dist/$(projeto); ls $(projeto)_*.md5  \
 	| sort  -r > files_$(projeto))
