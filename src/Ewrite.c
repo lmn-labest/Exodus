@@ -304,30 +304,30 @@ void write_restricion(FILE *f)
       }	
     }
   fprintf(f,"end constraindisp\n");
-  fprintf(stderr,"\nnodalforces...");
-  fprintf(f,"nodalforces\n");
-    for(i=0;i<nodeset.total;i++){
-      if( nodeset.id[i] == 5) {
-	  j = nodeset.node[i];
-	  x = node[j].x;
-	  y = node[j].y; 
-	  fx = (x/sqrt(x*x + y*y)) * 2 * F;
-	  fy = (y/sqrt(x*x + y*y)) * 2 * F;
-          fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
-      }	
-      if( nodeset.id[i] == 4 && !b[i]  ) {
-	  j = nodeset.node[i];
-	  x = node[j].x;
-	  y = node[j].y; 
-	  fx = (x/sqrt(x*x + y*y)) * 4 * F;
-	  fy = (y/sqrt(x*x + y*y)) * 4 * F;
-          fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
-      }	
-    } 
-  fprintf(f,"end nodalforces\n");
+//  fprintf(stderr,"\nnodalforces...");
+//  fprintf(f,"nodalforces\n");
+//    for(i=0;i<nodeset.total;i++){
+//      if( nodeset.id[i] == 5) {
+//	  j = nodeset.node[i];
+//	  x = node[j].x;
+//	  y = node[j].y; 
+//	  fx = (x/sqrt(x*x + y*y)) * 2 * F /(l*L);
+//	  fy = (y/sqrt(x*x + y*y)) * 2 * F /(l*L);
+//         fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
+//    }	
+//      if( nodeset.id[i] == 4 && !b[i]  ) {
+//	  j = nodeset.node[i];
+//	  x = node[j].x;
+//	  y = node[j].y; 
+//	  fx = (x/sqrt(x*x + y*y)) * 4 * F/(l*L);
+//	  fy = (y/sqrt(x*x + y*y)) * 4 * F/(l*L);
+//        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
+//      }	
+//    } 
+//  fprintf(f,"end nodalforces\n");
   fprintf(stderr,"\nintialtemp...");
-  fprintf(f,"initialtemp\n");
-    for(j=1;j<=nnode;j++){
+//  fprintf(f,"initialtemp\n");
+//  for(j=1;j<=nnode;j++){
 //    k =1;
 //    for(i=0;i<nodeset.total;i++){
 //     if(j==nodeset.node[i]){
@@ -339,9 +339,9 @@ void write_restricion(FILE *f)
 //      }
 //    }
 //    if(k)
-        fprintf(f,"%10d %20.8e\n",j,50.0);
-  }  
-  fprintf(f,"end initialtemp\n");
+//        fprintf(f,"%10d %20.8e\n",j,50.0);
+//  }  
+//  fprintf(f,"end initialtemp\n");
 /*...................................................................*/
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
