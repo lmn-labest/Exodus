@@ -256,133 +256,76 @@ void write_restricion(FILE *f)
 /*===*/
 #define F 2781.581653
   int i,j,k,nset;
-  int type,*id,*b;
-  int *aux,*ids;
+  int no;
   double x,y;
   double fy,fx;
 /*===================================================================*/  
 /*...*/
   fprintf(stderr,"\nEscrevendo restricion..");
-  insertionSort(nodeset.node,nodeset.id,nodeset.total);
-/*  removenode(nodeset.node,nodeset.id,nodeset.total);*/
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
-    for(i=0;i<nodeset.total;i++){
-      if( nodeset.id[i] == 3 || nodeset.id[i] == 4)  
-        fprintf(f,"%10d %2d\n",nodeset.node[i],1);
-    }
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[2] || nodeset[i].gid[3])
+        fprintf(f,"%10d %s\n",no,"1");
+  }
   fprintf(f,"end constraintemp\n");
 /*...*/  
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
-    for(i=0;i<nodeset.total;i++){
-      if( nodeset.id[i] == 3)  
-        fprintf(f,"%10d %lf\n",nodeset.node[i], 50.0);
-      if( nodeset.id[i] == 4)  
-        fprintf(f,"%10d %lf\n",nodeset.node[i],200.0);
-    }
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[2])
+        fprintf(f,"%10d %20.8e\n",no,50.0);
+      else if(nodeset[i].gid[3])
+        fprintf(f,"%10d %20.8e\n",no,200.0);
+  }
   fprintf(f,"end nodalsources\n");
-  fprintf(stderr,"\nconstraindisp...");
-  b = (int*) calloc(nodeset.total,sizeof(int));
-  removenode(nodeset.node,b,nodeset.total);
-  fprintf(f,"constraindisp\n");
-    for(i=0;i<nodeset.total;i++){
-      j = nodeset.node[i];
-      if( nodeset.id[i] == 1 || nodeset.id[i] == 2){
-	if(!b[i])
-	  fprintf(f,"%10d %s\n",j,"0 0 1");
-      }	  
-      if( nodeset.id[i] == 3) { 
-	if(!b[i])
-         fprintf(f,"%10d %s\n",j,"1 1 0");
-      }
-      if(b[i] == -1 && nodeset.id[i] == 6 ){
-        fprintf(f,"%10d %s\n",j,"1 1 1");
-      }
-      if( nodeset.id[i] == 5) {
-          fprintf(f,"%10d %s\n",j,"0 0 1");
-      }	
-    }
-  fprintf(f,"end constraindisp\n");
-//  fprintf(stderr,"\nnodalforces...");
-//  fprintf(f,"nodalforces\n");
-//    for(i=0;i<nodeset.total;i++){
-//      if( nodeset.id[i] == 5) {
-//	  j = nodeset.node[i];
-//	  x = node[j].x;
-//	  y = node[j].y; 
-//	  fx = (x/sqrt(x*x + y*y)) * 2 * F /(l*L);
-//	  fy = (y/sqrt(x*x + y*y)) * 2 * F /(l*L);
-//         fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
-//    }	
-//      if( nodeset.id[i] == 4 && !b[i]  ) {
-//	  j = nodeset.node[i];
-//	  x = node[j].x;
-//	  y = node[j].y; 
-//	  fx = (x/sqrt(x*x + y*y)) * 4 * F/(l*L);
-//	  fy = (y/sqrt(x*x + y*y)) * 4 * F/(l*L);
-//        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",j,fx,fy,0.0);
-//      }	
-//    } 
-//  fprintf(f,"end nodalforces\n");
+/**/  
   fprintf(stderr,"\nintialtemp...");
-//  fprintf(f,"initialtemp\n");
-//  for(j=1;j<=nnode;j++){
-//    k =1;
-//    for(i=0;i<nodeset.total;i++){
-//     if(j==nodeset.node[i]){
-//        if( nodeset.id[i] == 4) {
-//	  k = 0;
-//	  fprintf(f,"%10d %20.8e\n",j,200.0);
-//	  break;
-//	}
-//      }
-//    }
-//    if(k)
-//        fprintf(f,"%10d %20.8e\n",j,50.0);
-//  }  
-//  fprintf(f,"end initialtemp\n");
+  fprintf(f,"initialtemp\n");
+  for(i=0;i<nnode;i++){
+    fprintf(f,"%10d %20.8e\n",i+1,50.0);
+  }  
+  fprintf(f,"end initialtemp\n");
 /*...................................................................*/
+  fprintf(stderr,"\nconstraindisp...");
+  fprintf(f,"constraindisp\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if((nodeset[i].gid[0] || nodeset[i].gid[1]) 
+        && !nodeset[i].gid[5])
+        fprintf(f,"%10d %s\n",no,"0 0 1");
+      if((nodeset[i].gid[2]) && !nodeset[i].gid[5])
+        fprintf(f,"%10d %s\n",no,"1 1 0");
+      if(nodeset[i].gid[5] )
+        fprintf(f,"%10d %s\n",no,"1 1 1");
+  }
+  fprintf(f,"end constraindisp\n");
+/*...................................................................*/
+  fprintf(stderr,"\nnodalforces...");
+  fprintf(f,"nodalforces\n");
+   for(i=0;i<nnodeset;i++){
+      if( nodeset[i].gid[4]) {
+        no = nodeset[i].num;
+        x  = node[no].x;
+        y  = node[no].y;
+        fx = (x/sqrt(x*x + y*y)) * 2 * F ;
+        fy = (y/sqrt(x*x + y*y)) * 2 * F ;
+        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
+      }	
+      if( nodeset[i].gid[3] && !nodeset[i].gid[4]){
+        no = nodeset[i].num;
+        x  = node[no].x;
+        y = node[no].y;
+	fx = (x/sqrt(x*x + y*y)) * 4 * F;
+	fy = (y/sqrt(x*x + y*y)) * 4 * F;
+        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
+      }	
+  }
+  fprintf(f,"end nodalforces\n");
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
 }
 
-void insertionSort(int *v,int *b,int n)
-{
- int i, j, chave,chave1;
- 
- for(j=1; j<n; j++) 
- {
-   chave  = v[j];
-   chave1 = b[j];
-   i = j-1;
-   while(i >= 0 && v[i] > chave)
-   {
-     v[i+1] = v[i];
-     b[i+1] = b[i];
-     i--;
-   }		
-   v[i+1] = chave;
-   b[i+1] = chave1;
- }  
-}
-
-void removenode(int *v,int *b, int n)
-{
-  int i,j;
-  int aux1,aux2;
-
-  for(i=0;i<n;i++){
-    aux1=v[i];
-    for(j=i+1;j<n;j++){
-       aux2=v[j];
-       if(aux2 == aux1){
-	 b[j]   = -1;
-         b[j-1] = -1;
-       }	 
-       else
-	 break;
-    }  
-  }  
-}

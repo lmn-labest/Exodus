@@ -92,11 +92,11 @@ void read_head_exo(int exoid)
 /*...................................................................*/  
 
 /*...*/  
-  dim      = edim;
-  nnode    = enode;
-  nelem    = eelem;
-  nbody    = nelemblock;
-  nnodeset = enodeset;
+  dim       = edim;
+  nnode     = enode;
+  nelem     = eelem;
+  nbody     = nelemblock;
+  ngeomset  = enodeset;
 /*...................................................................*/  
 /*===================================================================*/  
 }
@@ -197,80 +197,128 @@ void read_carg_exo(int exoid){
 /*===*/  
   int i,j,k;
   int error = 0;
+  char *repnodeset=NULL;
   int *ids=NULL;
+  int *id=NULL;
   int *node_list=NULL;
-  int numset,numdf;
+  int *node_set_list=NULL;
+  int num_total,numdf,numset;
+  float fdum;
+  char *cdum;
 /*===================================================================*/  
   
 /*===*/  
-  
-/*... numero total de grupos de nos com restricoes*/
-/*...*/  
-//nodeset.g = (int *) malloc(nnodeset*sizeof(int));
-/*.................................................*/  
 
-  ids = (int *) calloc(nnodeset, sizeof(int));
+//nodeset = (NODESET*) malloc (nnodeset*sizeof(NODESET)); 
+//obtendo id das geometrias
+  ids = (int *) calloc(ngeomset,sizeof(int));
   error = ex_get_node_set_ids (exoid, ids);
 
 #if _DEBUG
-  for(i=0;i<nnodeset;i++){
+  for(i=0;i<ngeomset;i++){
     fprintf(stderr,"%d ids=%d\n",i+1,ids[i]);
   }
 #endif
 /*...................................................................*/  
   
-  nodeset.inode = (int *) calloc(nnodeset, sizeof(int));
-  nodeset.nset  = (int *) calloc(nnodeset, sizeof(int));
-  
-  for(i=0;i<nnodeset;i++){
-    error = ex_get_node_set_param (exoid,ids[i],&numset,&numdf);
-    nodeset.nset[i]   = numset;
-  }
-
-  for(i=1;i<nnodeset;i++)
-    nodeset.inode[i]  = nodeset.nset[i-1] + nodeset.inode[i-1];
-  
-  nodeset.total  = nodeset.inode[nnodeset-1] + nodeset.nset[nnodeset-1];
-  nodeset.node   = (int *) calloc(nodeset.total, sizeof(int));
-  nodeset.id     = (int *) calloc(nodeset.total, sizeof(int));
-  
-  for(i=0;i<nnodeset;i++){
-
+/*numero de nos com restricao*/
+      error = ex_inquire (exoid, EX_INQ_NS_NODE_LEN, &num_total, &fdum,
+      cdum);
+      node_list     = (int*) calloc (num_total,sizeof(int));
+      id            = (int *) calloc(num_total,sizeof(int));
+      k = 0;
+      for (i=0;i<ngeomset;i++){
+        error     = ex_get_node_set_param (exoid,ids[i],&numset,&numdf);
+        node_set_list = (int*) calloc(numset,sizeof(int));
+        error      = ex_get_node_set (exoid, ids[i], node_set_list);
+	for( j = 0; j < numset; j++){ 
+	  node_list[j+k]  = node_set_list[j];
+	  id[j+k]         = ids[i];
+	}  
+        k += numset;
+        free(node_set_list); 
+      }
 #if _DEBUG
-    fprintf(stderr,"grupo = %d pont = %d length = %d\n"
-	          ,i,nodeset.inode[i]
-	          ,nodeset.nset[i]);
+  for(i=0;i<num_total;i++){
+    fprintf(stderr,"%d node_list=%d id=%d\n",i+1,node_list[i],id[i]);
+  }
+#endif
+  insertionsort(node_list,id,num_total);
+  repnodeset     = (char*) calloc (num_total,sizeof(char));
+  contnodeset(node_list,repnodeset,&nnodeset,num_total);
+  printf("nnodeset=%d\n",nnodeset);
+#if _DEBUG
+  for(i=0;i<num_total;i++){
+    fprintf(stderr,"%d node_list=%d id=%d rep=%d\n",i+1,node_list[i],id[i],repnodeset[i]);
+  }
+#endif
+  
+  nodeset = (NODESET *) calloc(nnodeset,sizeof(NODESET));
+  k =-1;
+  for(i=0;i<num_total;i++){
+    if(!repnodeset[i]){
+      k++;
+      nodeset[k].num          = node_list[i];
+      nodeset[k].gid[id[i]-1] = 1;
+      nodeset[k].ngid         = 1;
+    }  
+    else{  
+      nodeset[k].gid[id[i]-1] = 1;
+      nodeset[k].ngid +=1;
+    }  
+  }
+#if _DEBUG
+  for(i=0;i<nnodeset;i++){
+    fprintf(stderr,"%d node=%d id=%d id=%d id=%d\n"
+    ,i+1,nodeset[i].num
+    ,nodeset[i].gid[0],nodeset[i].gid[1],nodeset[i].gid[2]);
+  }
 #endif
 
-    node_list = (int *) calloc(nodeset.nset[i], sizeof(int));
-    error = ex_get_node_set (exoid, ids[i], node_list);
-    for(j=0;j<nodeset.nset[i];j++){
-      k = nodeset.inode[i];
-      nodeset.node[k+j] = node_list[j];
-      nodeset.id[k+j]   = ids[i];
 #if _DEBUG
-      fprintf(stderr,"%d no = %d\n",j+1,node_list[j]);
-#endif
-
-    }
-    free(node_list);
-  }
-  free(ids);
-
-#if _DEBUG
-  for(i=0;i<nodeset.total;i++){
-    fprintf(stderr,"%d no = %d id = %d\n"
-	          ,i+1,nodeset.node[i],nodeset.id[i]);
-  }  
 #endif
  
 /*===================================================================*/  
 }
 /*********************************************************************/
 
-
+void contnodeset(int *v,char*nv,long *n,int num)
+{
+  int i,k;
+  int aux;
   
-
-
-
-
+  k   = 0;
+  aux = v[0];
+  for(i=1;i<num;i++){
+    printf("%d %d\n",aux,v[i]);
+    if( aux == v[i]){
+      nv[i]= 1 ;
+      k++;
+    }  
+    else{
+     nv[i] = 0; 
+     aux = v[i];
+   }  
+  }
+  printf("%d\n",k);
+  *n = num - k;
+}
+void insertionsort(int *v,int *b,int n)
+{
+ int i, j, chave,chave1;
+ 
+ for(j=1; j<n; j++) 
+ {
+   chave  = v[j];
+   chave1  = b[j];
+   i = j-1;
+   while(i >= 0 && v[i] > chave)
+   {
+     v[i+1] = v[i];
+     b[i+1] = b[i];
+     i--;
+   }		
+   v[i+1] = chave;
+   b[i+1] = chave1;
+ }  
+}

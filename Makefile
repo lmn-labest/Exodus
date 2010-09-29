@@ -6,7 +6,7 @@ fontes = \
 	 src/Ewrite.c
 .SUFFIXES: .c .h .o
 OS= $(shell uname -s)
-CFLAGS=-I./include/ -O2 -DDEBUG 
+CFLAGS=-I./include/ -O2 -D_DEBUG 
 LDFLAGS=-L./lib -lm -lexoIIv2c -lnetcdf
 
 OBJS= $(fontes:%.c=%.o)
