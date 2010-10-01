@@ -136,12 +136,12 @@ void read_elem_exo(exoid){
 /*===*/
   char element_type[MAX_STR_LENGTH + 1];
   int id,num_el_in_blk,num_nod_per_el,num_attr,px;
-  int *connect;
+  int *connect=NULL;
   int i,j,ii,jj=0,error =0 ;
   float *attrib;
 /*===================================================================*/
 /**/
-    elemt = (ELEMT *) calloc(nelem,sizeof(ELEMT));
+  elemt = (ELEMT *) calloc(nelem,sizeof(ELEMT));
 /*===*/ 
   for(ii=1;ii<nbody+1;ii++){
     id = ii;
@@ -160,11 +160,22 @@ void read_elem_exo(exoid){
           elemt[jj].node[j] = connect[j+px];
       jj++;
     }
+    free(connect);
   } 
 /*===================================================================*/
-/**/
 /*===*/
-   free(connect);
+  maxno = num_nod_per_el;
+  connect = (int *) malloc(nelem*maxno*sizeof(int));
+  for(i=0;i<nelem;i++){
+    px = maxno*i;
+    for(j=0;j<maxno;j++)
+      connect[px+j] = elemt[i].node[j];
+  }  
+  propnode_malloc_geral(pnode.nincid,pnode.incid,connect  
+                       ,nnode,nelem,maxno,&(pnode.maxgrade));
+  free(connect);
+/*===================================================================*/  
+/*===*/
 /*===================================================================*/   
 }
 /*********************************************************************/
@@ -209,8 +220,6 @@ void read_carg_exo(int exoid){
   
 /*===*/  
 
-//nodeset = (NODESET*) malloc (nnodeset*sizeof(NODESET)); 
-//obtendo id das geometrias
   ids = (int *) calloc(ngeomset,sizeof(int));
   error = ex_get_node_set_ids (exoid, ids);
 
@@ -246,8 +255,8 @@ void read_carg_exo(int exoid){
   insertionsort(node_list,id,num_total);
   repnodeset     = (char*) calloc (num_total,sizeof(char));
   contnodeset(node_list,repnodeset,&nnodeset,num_total);
-  printf("nnodeset=%d\n",nnodeset);
 #if _DEBUG
+  printf("nnodeset=%d\n",nnodeset);
   for(i=0;i<num_total;i++){
     fprintf(stderr,"%d node_list=%d id=%d rep=%d\n",i+1,node_list[i],id[i],repnodeset[i]);
   }
@@ -275,8 +284,6 @@ void read_carg_exo(int exoid){
   }
 #endif
 
-#if _DEBUG
-#endif
  
 /*===================================================================*/  
 }
@@ -290,7 +297,6 @@ void contnodeset(int *v,char*nv,long *n,int num)
   k   = 0;
   aux = v[0];
   for(i=1;i<num;i++){
-    printf("%d %d\n",aux,v[i]);
     if( aux == v[i]){
       nv[i]= 1 ;
       k++;
@@ -300,7 +306,7 @@ void contnodeset(int *v,char*nv,long *n,int num)
      aux = v[i];
    }  
   }
-  printf("%d\n",k);
+/*  printf("%d\n",k);*/
   *n = num - k;
 }
 void insertionsort(int *v,int *b,int n)

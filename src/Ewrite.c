@@ -254,13 +254,23 @@ void write_mef_cell(FILE *f){
 void write_restricion(FILE *f)
 {
 /*===*/
-#define F 2781.581653
   int i,j,k,nset;
   int no;
   double x,y;
-  double fy,fx;
+  double fy,fx,mf;
 /*===================================================================*/  
 /*...*/
+/* teste do calculoda area cubo
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[2] || nodeset[i].gid[3]){
+        fprintf(stderr,"\nno = %d\n",no);
+	mf = modF(no);
+        fprintf(stderr,"f = %lf\n",mf);
+      }	
+  }
+  exit(0);
+*/  
   fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
@@ -306,20 +316,28 @@ void write_restricion(FILE *f)
   fprintf(stderr,"\nnodalforces...");
   fprintf(f,"nodalforces\n");
    for(i=0;i<nnodeset;i++){
-      if( nodeset[i].gid[4]) {
+      if( nodeset[i].gid[4]){
         no = nodeset[i].num;
         x  = node[no].x;
-        y  = node[no].y;
-        fx = (x/sqrt(x*x + y*y)) * 2 * F ;
-        fy = (y/sqrt(x*x + y*y)) * 2 * F ;
+        y = node[no].y;
+	mf = modF(no);
+//      fprintf(stderr,"\n%d %lf\n",no,mf);
+  	fx = (x/sqrt(x*x + y*y)) * mf/(10000*10000);
+  	fy = (y/sqrt(x*x + y*y)) * mf/(10000*10000);
+//fx = (x/sqrt(x*x + y*y)) ;
+//fy = (y/sqrt(x*x + y*y)) ;
         fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
-      }	
+      }
       if( nodeset[i].gid[3] && !nodeset[i].gid[4]){
         no = nodeset[i].num;
         x  = node[no].x;
         y = node[no].y;
-	fx = (x/sqrt(x*x + y*y)) * 4 * F;
-	fy = (y/sqrt(x*x + y*y)) * 4 * F;
+	mf = modF(no);
+//      fprintf(stderr,"\n%d %lf\n",no,mf);
+  	fx = (x/sqrt(x*x + y*y)) * mf/(10000*10000);
+  	fy = (y/sqrt(x*x + y*y)) * mf/(10000*10000);
+//fx = (x/sqrt(x*x + y*y)) ;
+//fy = (y/sqrt(x*x + y*y)) ;
         fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
       }	
   }
@@ -328,4 +346,161 @@ void write_restricion(FILE *f)
   fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
 }
+double modF(int no)
+{
+#define F 100000.0
+  double f;
+  int *face=NULL;
+  int i,j,k,kk,l;
+  int grade;
+  int nel;
+  int nfaces;
+  int shno,idno;
+  int T1[3],T2[3],T3[3],T4[3];
+  double A[4],Aface[4];
 
+  face = (int*) calloc(8*4,sizeof(int));
+  kk = 0;
+//  fprintf(stderr,"\nno=%d\n",no);
+  grade=pnode.nincid[no-1];
+//  fprintf(stderr,"grade=%d\n",grade);
+/* loop no elementos q este no compartilha*/
+  for(i=0;i<grade;i++){
+    nel = pnode.incid[(no-1)*pnode.maxgrade+i];
+  //  fprintf(stderr,"nel=%d\n",nel);
+    for(j=0;j<maxno;j++){
+      shno = elemt[nel-1].node[j];
+    //  fprintf(stderr,"nel=%d no=%d\n",nel,shno);
+/* verifica se esse no esta na superficie desejada*/
+      for(k=0;k<nnodeset;k++){
+        idno = nodeset[k].num;
+	if( shno == idno ){
+	  if( shno == idno ){
+	    if(nodeset[k].gid[3]){
+//	      fprintf(stderr,"idno=%d kk=%d\n",idno,kk);
+              face[kk] = idno;
+	      kk++;
+	    }  
+	  }  
+	}  
+      }	  
+    }
+  }
+  
+  nfaces = kk/4;
+//printf("\n");
+//for(i=0;i<nfaces*4;i++)
+//  printf("%d face=%d\n",i+1,face[i]);
+/**/
+/*calculo da area das faces*/  
+  for(i=0;i<nfaces;i++){
+    maketri(&face[i*4],T1,T2,T3,T4);
+//fprintf(stderr,"\n");
+//fprintf(stderr,"T1=(%d %d %d)\n",T1[0],T1[1],T1[2]);
+//fprintf(stderr,"T2=(%d %d %d)\n",T2[0],T2[1],T2[2]);
+//fprintf(stderr,"T3=(%d %d %d)\n",T3[0],T3[1],T3[2]);
+//fprintf(stderr,"T4=(%d %d %d)\n",T4[0],T4[1],T4[2]);
+    A[0]=getarea(T1);
+    A[1]=getarea(T2);
+    A[2]=getarea(T3);
+    A[3]=getarea(T4);
+    Aface[i] = A[0] + A[1] + A[2] + A[3];
+    Aface[i] = Aface[i]/2;
+//    fprintf(stderr,"A[%d]=%lf\n",i+1,Aface[i]);
+  }
+/*Forca equivalente nodal*/  
+  f =0.0;
+  for(i=0;i<nfaces;i++){
+    f += F*Aface[i];
+  }
+/**/    
+  free(face);
+  return f;
+}
+
+void maketri(int *face,int *T1, int *T2,int *T3,int *T4){
+
+  T1[0] = T2[0] = T3[0] = T4[0] = face[0];
+  T1[1] = T3[1] = T4[1]         = face[1];
+  T2[2] = T3[2]                 = face[2];
+  T1[2] = T4[2]                 = face[3];
+  T2[1]                         = face[3];
+
+}
+
+double getarea(int*T){
+  
+  double aux1[3],aux2[3];
+  double V1[3],V2[3],VxV[3];
+  double D,A;
+  int no;
+/*T(a,b,c)*/  
+/*V1= (b-a)*/
+/*a*/
+  no      = T[0] - 1;
+
+  aux1[0] = node[no].x;
+  aux1[1] = node[no].y;
+  aux1[2] = node[no].z;
+//fprintf(stderr,"no %d aux1 %lf %lf %lf\n",no+1,aux1[0],aux1[1],aux1[2]);
+/*b*/
+  no      = T[1] - 1;
+  aux2[0] = node[no].x;
+  aux2[1] = node[no].y;
+  aux2[2] = node[no].z;
+//  fprintf(stderr,"no %d aux2 %lf %lf %lf\n",no+1,aux2[0],aux2[1],aux2[2]);
+/*b-a*/  
+  subvetor(V1,aux2,aux1,3);
+//fprintf(stderr,"V1 %lf %lf %lf\n",V1[0],V1[1],V1[2]);
+/*V1= (c-a)*/
+/*c*/
+  no      = T[2] - 1;
+  aux2[0] = node[no].x;
+  aux2[1] = node[no].y;
+  aux2[2] = node[no].z;
+//  fprintf(stderr,"no %d aux2 %lf %lf %lf\n",no+1,aux2[0],aux2[1],aux2[2]);
+/*c-a*/  
+  subvetor(V2,aux2,aux1,3);
+//fprintf(stderr,"V2 %lf %lf %lf\n",V2[0],V2[1],V2[2]);
+/*produto vetoria*/
+  prodvetorial(VxV,V1,V2); 
+//fprintf(stderr,"V1XV2 %lf %lf %lf\n",VxV[0],VxV[1],VxV[2]);
+/*produto escalar*/
+  D = dot(VxV,VxV,3);
+//fprintf(stderr,"dot=%lf\n",D);
+  D = sqrt(D); 
+  A = (1/2.0)*D;
+//fprintf(stderr,"A=%lf\n",A);
+  return A;
+}
+
+/*sub tracao de vetores*/
+void  subvetor(double* V1,double* aux2,double* aux1,int n){
+  
+  int i;
+  for(i=0;i<n;i++)
+    V1[i]=aux2[i]-aux1[i];
+
+}
+/*produto vetorial*/
+void  prodvetorial(double *V,double*x1,double*x2){
+  
+  V[0] = x1[1]*x2[2] - x1[2]*x2[1];
+  V[1] = x1[2]*x2[0] - x1[0]*x2[2];
+  V[2] = x1[0]*x2[1] - x2[0]*x1[1];
+
+}
+
+/*produto escalar*/
+double dot(double *x,double *y,int n){
+  
+  int i;
+  double tm;
+  
+  tm = 0.0;
+  for(i=0;i<n;i++){
+    tm += x[i]*y[i];
+  }
+
+  return tm;
+}

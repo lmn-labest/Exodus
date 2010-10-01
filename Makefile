@@ -3,10 +3,12 @@ name = eread
 fontes = \
          src/Emain.c\
 	 src/ERead.c\
-	 src/Ewrite.c
+	 src/Ewrite.c\
+	 src/Propnode.c
 .SUFFIXES: .c .h .o
 OS= $(shell uname -s)
-CFLAGS=-I./include/ -O2 -D_DEBUG 
+#CFLAGS=-I./include/ -O2 -D_DEBUG 
+CFLAGS=-I./include/ -O2  
 LDFLAGS=-L./lib -lm -lexoIIv2c -lnetcdf
 
 OBJS= $(fontes:%.c=%.o)
