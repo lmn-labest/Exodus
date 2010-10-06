@@ -41,11 +41,11 @@ void myelmnicid (int*,int*,int*,long,long,int,int);
 
 /*...*/
 void maketri(int *,int *, int *,int *,int *);
-double getarea(int*);
+double getarea(int*,double *);
 void  subvetor(double*,double*,double*,int);
 void  prodvetorial(double*,double*,double*);
 double dot(double*,double*,int);
-double modF(int);
+double modF(int,double*);
 /*...................................................................*/
 
 /*variaveis globais*/

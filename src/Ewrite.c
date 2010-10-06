@@ -152,8 +152,8 @@ void write_mef_coor(FILE *f)
     case 3:
       for (i = 0 ; i < nnode ; i++)
 /*gambiarra para o cilindro*/	
-        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x/10000 ,
-	         node[i].y/10000, node[i].z/10000);
+        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x/10000.0 ,
+	         node[i].y/10000.0, node[i].z/10000.0);
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -257,7 +257,7 @@ void write_restricion(FILE *f)
   int i,j,k,nset;
   int no;
   double x,y;
-  double fy,fx,mf;
+  double force[3],mf;
 /*===================================================================*/  
 /*...*/
 /* teste do calculoda area cubo
@@ -270,7 +270,8 @@ void write_restricion(FILE *f)
       }	
   }
   exit(0);
-*/  
+*/
+    
   fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
@@ -280,7 +281,9 @@ void write_restricion(FILE *f)
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");
+    
 /*...*/  
+    
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
@@ -291,14 +294,17 @@ void write_restricion(FILE *f)
         fprintf(f,"%10d %20.8e\n",no,200.0);
   }
   fprintf(f,"end nodalsources\n");
-/**/  
+  
+/**/
+    
   fprintf(stderr,"\nintialtemp...");
   fprintf(f,"initialtemp\n");
   for(i=0;i<nnode;i++){
     fprintf(f,"%10d %20.8e\n",i+1,50.0);
   }  
   fprintf(f,"end initialtemp\n");
-/*...................................................................*/
+  
+  /*...................................................................*/
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
@@ -316,40 +322,27 @@ void write_restricion(FILE *f)
   fprintf(stderr,"\nnodalforces...");
   fprintf(f,"nodalforces\n");
    for(i=0;i<nnodeset;i++){
-      if( nodeset[i].gid[4]){
+      if( nodeset[i].gid[3]){
         no = nodeset[i].num;
-        x  = node[no].x;
-        y = node[no].y;
-	mf = modF(no);
-//      fprintf(stderr,"\n%d %lf\n",no,mf);
-  	fx = (x/sqrt(x*x + y*y)) * mf/(10000*10000);
-  	fy = (y/sqrt(x*x + y*y)) * mf/(10000*10000);
-//fx = (x/sqrt(x*x + y*y)) ;
-//fy = (y/sqrt(x*x + y*y)) ;
-        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
+	mf = modF(no,force);
+        fprintf(stderr,"no= %d\nforce=(%lf,%lf,%lf)\n|force| = %lf\n"
+	       ,no,force[0],force[1]
+	       ,force[2],mf);
+        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,force[0]/(10000.0*10000.0)
+	        ,force[1]/(10000.0*10000.0)
+//	        ,force[2]/(10000.0*10000.0));
+  	        ,0.0);
       }
-      if( nodeset[i].gid[3] && !nodeset[i].gid[4]){
-        no = nodeset[i].num;
-        x  = node[no].x;
-        y = node[no].y;
-	mf = modF(no);
-//      fprintf(stderr,"\n%d %lf\n",no,mf);
-  	fx = (x/sqrt(x*x + y*y)) * mf/(10000*10000);
-  	fy = (y/sqrt(x*x + y*y)) * mf/(10000*10000);
-//fx = (x/sqrt(x*x + y*y)) ;
-//fy = (y/sqrt(x*x + y*y)) ;
-        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,fx,fy,0.0);
-      }	
+   	
   }
   fprintf(f,"end nodalforces\n");
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
 }
-double modF(int no)
+double modF(int no,double *f)
 {
-#define F 100000.0
-  double f;
+#define F  65000000.0
   int *face=NULL;
   int i,j,k,kk,l;
   int grade;
@@ -357,7 +350,7 @@ double modF(int no)
   int nfaces;
   int shno,idno;
   int T1[3],T2[3],T3[3],T4[3];
-  double A[4],Aface[4];
+  double A[4],Aface[4],n[3],fn[4][3],modf;
 
   face = (int*) calloc(8*4,sizeof(int));
   kk = 0;
@@ -400,22 +393,39 @@ double modF(int no)
 //fprintf(stderr,"T2=(%d %d %d)\n",T2[0],T2[1],T2[2]);
 //fprintf(stderr,"T3=(%d %d %d)\n",T3[0],T3[1],T3[2]);
 //fprintf(stderr,"T4=(%d %d %d)\n",T4[0],T4[1],T4[2]);
-    A[0]=getarea(T1);
-    A[1]=getarea(T2);
-    A[2]=getarea(T3);
-    A[3]=getarea(T4);
+    A[0]=getarea(T1,n);
+    A[1]=getarea(T2,n);
+    A[2]=getarea(T3,n);
+    A[3]=getarea(T4,n);
+/*vetor normal a face*/
+    fn[i][0] = n[0];
+    fn[i][1] = n[1];
+    fn[i][2] = n[2];
+/*....................................................*/    
     Aface[i] = A[0] + A[1] + A[2] + A[3];
     Aface[i] = Aface[i]/2;
-//    fprintf(stderr,"A[%d]=%lf\n",i+1,Aface[i]);
+    fprintf(stderr,"no = %d A[%d]=%lf "
+	    "normal =(%lf,%lf,%lf) mod = %lf\n"
+	    ,no,i+1,Aface[i],fn[i][0],fn[i][1],fn[i][2]
+	    ,sqrt(dot(fn[i],fn[i],3)));
+    
   }
+  
 /*Forca equivalente nodal*/  
-  f =0.0;
+  f[0] =0.0;
+  f[1] =0.0;
+  f[2] =0.0;
   for(i=0;i<nfaces;i++){
-    f += F*Aface[i];
+    for(j=0;j<3;j++)
+        f[j] += fn[i][j]*F*Aface[i]/4.0;
   }
+/*produto escalar*/
+  modf = dot(f,f,3);
+//fprintf(stderr,"dot=%lf\n",D);
+  modf = sqrt(modf); 
 /**/    
   free(face);
-  return f;
+  return modf;
 }
 
 void maketri(int *face,int *T1, int *T2,int *T3,int *T4){
@@ -428,7 +438,7 @@ void maketri(int *face,int *T1, int *T2,int *T3,int *T4){
 
 }
 
-double getarea(int*T){
+double getarea(int*T,double *n){
   
   double aux1[3],aux2[3];
   double V1[3],V2[3],VxV[3];
@@ -463,12 +473,17 @@ double getarea(int*T){
   subvetor(V2,aux2,aux1,3);
 //fprintf(stderr,"V2 %lf %lf %lf\n",V2[0],V2[1],V2[2]);
 /*produto vetoria*/
-  prodvetorial(VxV,V1,V2); 
+  prodvetorial(VxV,V1,V2);
 //fprintf(stderr,"V1XV2 %lf %lf %lf\n",VxV[0],VxV[1],VxV[2]);
 /*produto escalar*/
   D = dot(VxV,VxV,3);
 //fprintf(stderr,"dot=%lf\n",D);
   D = sqrt(D); 
+/*vetor normal a face*/
+  n[0]=VxV[0]/D;
+  n[1]=VxV[1]/D;
+  n[2]=VxV[2]/D;
+/*Area*/  
   A = (1/2.0)*D;
 //fprintf(stderr,"A=%lf\n",A);
   return A;
