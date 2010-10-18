@@ -151,9 +151,8 @@ void write_mef_coor(FILE *f)
 /*---3 dimencoes*/      
     case 3:
       for (i = 0 ; i < nnode ; i++)
-/*gambiarra para o cilindro*/	
-        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x/10000.0 ,
-	         node[i].y/10000.0, node[i].z/10000.0);
+        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x,
+	         node[i].y, node[i].z);
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -277,7 +276,8 @@ void write_restricion(FILE *f)
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-      if(nodeset[i].gid[2] || nodeset[i].gid[3])
+        if(nodeset[i].gid[2] || nodeset[i].gid[3])
+//      if(nodeset[i].gid[0])
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");
@@ -288,23 +288,25 @@ void write_restricion(FILE *f)
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-      if(nodeset[i].gid[2])
-        fprintf(f,"%10d %20.8e\n",no,50.0);
-      else if(nodeset[i].gid[3])
-        fprintf(f,"%10d %20.8e\n",no,200.0);
+        if(nodeset[i].gid[2])
+//      if(nodeset[i].gid[0])
+          fprintf(f,"%10d %20.8e\n",no,50.0);
+        else if(nodeset[i].gid[3])
+          fprintf(f,"%10d %20.8e\n",no,200.0);
   }
   fprintf(f,"end nodalsources\n");
   
 /**/
-    
+      
   fprintf(stderr,"\nintialtemp...");
   fprintf(f,"initialtemp\n");
   for(i=0;i<nnode;i++){
     fprintf(f,"%10d %20.8e\n",i+1,50.0);
   }  
   fprintf(f,"end initialtemp\n");
-  
+    
   /*...................................................................*/
+   
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
@@ -317,7 +319,7 @@ void write_restricion(FILE *f)
       if(nodeset[i].gid[5] )
         fprintf(f,"%10d %s\n",no,"1 1 1");
   }
-  fprintf(f,"end constraindisp\n");
+  fprintf(f,"end constraindisp\n");  
 /*...................................................................*/
   fprintf(stderr,"\nnodalforces...");
   fprintf(f,"nodalforces\n");
@@ -325,17 +327,17 @@ void write_restricion(FILE *f)
       if( nodeset[i].gid[3]){
         no = nodeset[i].num;
 	mf = modF(no,force);
-        fprintf(stderr,"no= %d\nforce=(%lf,%lf,%lf)\n|force| = %lf\n"
-	       ,no,force[0],force[1]
-	       ,force[2],mf);
-        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,force[0]/(10000.0*10000.0)
-	        ,force[1]/(10000.0*10000.0)
+//        fprintf(stderr,"no= %d\nforce=(%lf,%lf,%lf)\n|force| = %lf\n"
+//	       ,no,force[0],force[1]
+//	       ,force[2],mf);
+        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,-force[0]
+	        ,-force[1]
 //	        ,force[2]/(10000.0*10000.0));
   	        ,0.0);
       }
    	
   }
-  fprintf(f,"end nodalforces\n");
+  fprintf(f,"end nodalforces\n");  
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
@@ -403,11 +405,11 @@ double modF(int no,double *f)
     fn[i][2] = n[2];
 /*....................................................*/    
     Aface[i] = A[0] + A[1] + A[2] + A[3];
-    Aface[i] = Aface[i]/2;
-    fprintf(stderr,"no = %d A[%d]=%lf "
-	    "normal =(%lf,%lf,%lf) mod = %lf\n"
-	    ,no,i+1,Aface[i],fn[i][0],fn[i][1],fn[i][2]
-	    ,sqrt(dot(fn[i],fn[i],3)));
+    Aface[i] = Aface[i]/2.0;
+//  fprintf(stderr,"no = %d A[%d]=%lf "
+//   "normal =(%lf,%lf,%lf) mod = %lf\n"
+//   ,no,i+1,Aface[i],fn[i][0],fn[i][1],fn[i][2]
+//   ,sqrt(dot(fn[i],fn[i],3)));
     
   }
   
