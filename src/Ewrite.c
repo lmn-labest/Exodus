@@ -144,7 +144,7 @@ void write_mef_coor(FILE *f)
 /*---2 dimencoes*/      
     case 2:
       for (i = 0 ; i < nnode ; i++)
-        fprintf(f,"%ld %lf %lf",i+1, node[i].x , node[i].y);
+        fprintf(f,"%ld %lf %lf\n",i+1, node[i].x , node[i].y);
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -193,6 +193,18 @@ void write_mef_cell(FILE *f){
   fprintf(stderr,"\nEscrevendo Elementos...");
 /*...*/
   switch(tp){
+/*---*/    
+    case 3:
+      fprintf(stderr,"\nTetraedros");
+      fprintf(f,"quad4\n");
+      for( i = 0 ; i < nelem ; i ++)
+	fprintf(f,"%10ld %10ld %10ld %10ld %10ld %3d\n",i+1
+	         ,elemt[i].node[0],elemt[i].node[1],elemt[i].node[2]
+		 ,elemt[i].node[3],elemt[i].body);
+      fprintf(f,"end quad4");
+      fprintf(stderr,"\nElementos escritos.\n");
+      break;
+/*-------------------------------------------------------------------*/  
 /*---*/    
     case 4:
       fprintf(stderr,"\nTetraedros");

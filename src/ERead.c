@@ -195,6 +195,8 @@ void error_exo(int error , char *field){
 int type_elm(char *s)
 {
   short i;
+  if(!strcmp(s,"QUAD"))
+     i = 3;
   if(!strcmp(s,"TETRA"))
      i = 4;
   else if(!strcmp(s,"HEX8"))
