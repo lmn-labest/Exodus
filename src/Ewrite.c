@@ -195,7 +195,7 @@ void write_mef_cell(FILE *f){
   switch(tp){
 /*---*/    
     case 3:
-      fprintf(stderr,"\nTetraedros");
+      fprintf(stderr,"\nQuad4");
       fprintf(f,"quad4\n");
       for( i = 0 ; i < nelem ; i ++)
 	fprintf(f,"%10ld %10ld %10ld %10ld %10ld %3d\n",i+1
@@ -236,6 +236,23 @@ void write_mef_cell(FILE *f){
       break;
 /*-------------------------------------------------------------------*/ 
 /**/
+/*---*/    
+    case 23:
+      fprintf(stderr,"\nQuad8");
+      fprintf(f,"quad8\n");
+      for( i = 0 ; i < nelem ; i ++)
+	fprintf(f,"%10ld "
+	          "%10ld %10ld %10ld %10ld "
+	          "%10ld %10ld %10ld %10ld "
+	          " %3d\n",i+1
+	         ,elemt[i].node[0],elemt[i].node[1],elemt[i].node[2]
+		 ,elemt[i].node[3],elemt[i].node[4],elemt[i].node[5]
+		 ,elemt[i].node[6],elemt[i].node[7]
+		 ,elemt[i].body);
+      fprintf(f,"end quad8");
+      fprintf(stderr,"\nElementos escritos.\n");
+      break;
+/*-------------------------------------------------------------------*/  
 /*---*/
     default:
       printf("Numero de elemento invalido.\n"
