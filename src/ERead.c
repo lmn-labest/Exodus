@@ -195,7 +195,7 @@ void error_exo(int error , char *field){
 int type_elm(char *s)
 {
   short i;
-  fprintf(stderr," type %s\n",s);
+/*  fprintf(stderr," type %s\n",s);*/
   if(!strcmp(s,"QUAD"))
      i = 3;
   else if(!strcmp(s,"TETRA"))

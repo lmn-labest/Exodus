@@ -4,10 +4,21 @@
 #include<stdlib.h>
 #include<string.h>
 
+static void write_double(double,bool,FILE*);
+static void force_big_endian(unsigned char *,bool,int);
+static void write_int(int,bool,FILE*);
+static void new_section(bool cod,FILE *f);
+
 void write_mef(char *ins){
 /*===*/
   FILE *fileout[3];
   char s[4][200];
+  bool coorbin,elmbin;
+/*===================================================================*/
+/**/
+/*=== arquivos binarias auxiliares*/  
+  coorbin = true;
+  elmbin  = true;
 /*===================================================================*/
 /**/
 /*=== Manipulação do nome do arquivo*/  
@@ -16,8 +27,17 @@ void write_mef(char *ins){
   strcpy(s[2],ins);
   strcpy(s[3],ins);
   strcat(s[0],".dat");
-  strcat(s[1],"_coor.dat");
-  strcat(s[2],"_elem.dat");
+  
+  if(coorbin)
+    strcat(s[1],"_coor_bin.dat");
+  else  
+    strcat(s[1],"_coor.dat");
+  
+  if(elmbin)
+    strcat(s[2],"_elem_bin.dat");
+  else
+    strcat(s[2],"_elem.dat");
+  
   strcat(s[3],"_restricion.dat");
 /*===================================================================*/
 /**/  
@@ -31,29 +51,29 @@ void write_mef(char *ins){
 /*...................................................................*/
 /**/
 /*...*/
-  write_head_mef(fileout[0],s[1],s[2],s[3]);
+  write_head_mef(fileout[0],s[1],s[2],s[3],coorbin,elmbin);
   fclose(fileout[0]);
 /*===================================================================*/
 /**/
 /*=== arquivo da coordenadas*/  
-  fileout[1]=fopen(s[1],"w");
+  fileout[1]=fopen(s[1],"wb");
   if (fileout==NULL){ 
     fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[1]);
     exit(1);
   } 
   fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[1]);
-  write_mef_coor(fileout[1]);
+  write_mef_coor(fileout[1],coorbin);
   fclose(fileout[1]);
 /*===================================================================*/
 /**/
 /*=== arquivo das connectividades*/  
-  fileout[2]=fopen(s[2],"w");
+  fileout[2]=fopen(s[2],"wb");
   if (fileout==NULL){ 
     fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[2]);
     exit(1);
   } 
   fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[2]);
-  write_mef_cell(fileout[2]);
+  write_mef_cell(fileout[2],elmbin);
   fclose(fileout[2]);
 /*===================================================================*/
 /**/
@@ -83,10 +103,13 @@ void write_mef(char *ins){
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
  *********************************************************************/  
-void write_head_mef(FILE *f,char *file1,char *file2,char *file3)
+void write_head_mef(FILE *f,char *file1,char *file2,char *file3
+                   ,bool coorbin,bool elmbin)
 {
 /*===*/  
   long i;
+  short tp;
+  char type[20];
 /*===================================================================*/  
 /**/
 /*===*/  
@@ -104,8 +127,31 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3)
 /*...................................................................*/
 /**/
 /*...*/
-  fprintf(f,"insert %s\n",file1);
-  fprintf(f,"insert %s\n",file2);
+  if(coorbin)
+    fprintf(f,"coordinatesbin %s\n",file1);
+  else
+    fprintf(f,"insert %s\n",file1);
+  
+  if(elmbin){
+    tp=elemt[0].type;
+    switch (tp){
+      case 3:
+      strcpy(type,"quad4bin");
+      break;
+      case 4:
+      strcpy(type,"tetra4bin");
+      break;
+      case 5:
+      strcpy(type,"hexa8bin");
+      break;
+      case 23:
+      strcpy(type,"quad8bin");
+      break;
+    }
+    fprintf(f,"%s %ld %s\n",type,nelem,file2);
+  }  
+  else
+    fprintf(f,"insert %s\n",file2);
   fprintf(f,"insert %s\n",file3);
 /*...................................................................*/
 /**/
@@ -124,16 +170,18 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3)
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
  *********************************************************************/  
-void write_mef_coor(FILE *f)
+void write_mef_coor(FILE *f,bool bin)
 {
 /*===*/  
   long i;
+  double x;
 /*===================================================================*/
 /**/
 /*===*/
   fprintf(stderr,"\nEscrevendo coordenadas...");
-  fprintf(f,"coordinates\n");
-/*...*/  
+  if(!bin)
+    fprintf(f,"coordinates\n");
+/*...*/
   switch(dim){
 /*--- 1 dimencao*/
     case 1:
@@ -143,16 +191,24 @@ void write_mef_coor(FILE *f)
 /**/
 /*---2 dimencoes*/      
     case 2:
-      for (i = 0 ; i < nnode ; i++)
-        fprintf(f,"%ld %lf %lf\n",i+1, node[i].x , node[i].y);
+      for (i = 0 ; i < nnode ; i++){
+        write_int(i+1,bin,f);
+	write_double(node[i].x,bin,f);
+	write_double(node[i].y,bin,f);
+	new_section(bin,f);
+      }	
       break;
 /*-------------------------------------------------------------------*/
 /**/
 /*---3 dimencoes*/      
     case 3:
-      for (i = 0 ; i < nnode ; i++)
-        fprintf(f,"%ld %15.8lf %15.8lf %15.8lf\n", i+1 , node[i].x,
-	         node[i].y, node[i].z);
+      for (i = 0 ; i < nnode ; i++){
+        write_int(i+1,bin,f);
+	write_double(node[i].x,bin,f);
+	write_double(node[i].y,bin,f);
+	write_double(node[i].z,bin,f);
+	new_section(bin,f);
+      }	
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -166,6 +222,7 @@ void write_mef_coor(FILE *f)
   }
 /*...................................................................*/
   fprintf(stderr,"\ncoordenadas escritas.");
+  if(!bin)
   fprintf(f,"end coordinates\nreturn\n");
 
 /*===================================================================*/
@@ -182,10 +239,11 @@ void write_mef_coor(FILE *f)
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
  *********************************************************************/  
-void write_mef_cell(FILE *f){
+void write_mef_cell(FILE *f,bool bin){
 /*===*/  
   short tp;
   long i;
+  int no;
 /*=====================================================================*/
 /**/  
 /*===*/
@@ -196,24 +254,48 @@ void write_mef_cell(FILE *f){
 /*---*/    
     case 3:
       fprintf(stderr,"\nQuad4");
-      fprintf(f,"quad4\n");
-      for( i = 0 ; i < nelem ; i ++)
-	fprintf(f,"%10ld %10ld %10ld %10ld %10ld %3d\n",i+1
-	         ,elemt[i].node[0],elemt[i].node[1],elemt[i].node[2]
-		 ,elemt[i].node[3],elemt[i].body);
-      fprintf(f,"end quad4");
+      if(!bin)
+        fprintf(f,"quad4\n");
+      for( i = 0 ; i < nelem ; i ++){
+        write_int(i+1,bin,f);
+	no = (int )elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[3];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }	
+      if(!bin)
+        fprintf(f,"end quad4");
       fprintf(stderr,"\nElementos escritos.\n");
       break;
 /*-------------------------------------------------------------------*/  
 /*---*/    
     case 4:
       fprintf(stderr,"\nTetraedros");
-      fprintf(f,"tetra4\n");
-      for( i = 0 ; i < nelem ; i ++)
-	fprintf(f,"%10ld %10ld %10ld %10ld %10ld %3d\n",i+1
-	         ,elemt[i].node[0],elemt[i].node[1],elemt[i].node[3]
-		 ,elemt[i].node[2],elemt[i].body);
-      fprintf(f,"end tetra4");
+      if(!bin)
+        fprintf(f,"tetra4\n");
+      for( i = 0 ; i < nelem ; i ++){
+        write_int(i+1,bin,f);
+	no = (int )elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[3];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }		 
+      if(!bin)		 
+        fprintf(f,"end tetra4");
       fprintf(stderr,"\nElementos escritos.\n");
       break;
 /*-------------------------------------------------------------------*/  
@@ -221,17 +303,32 @@ void write_mef_cell(FILE *f){
 /*---*/    
     case 5:
       fprintf(stderr,"\nHexaedros");
-      fprintf(f,"hexa8\n");
+      if(!bin)
+        fprintf(f,"hexa8\n");
       for( i = 0 ; i < nelem ; i ++){
-	fprintf(f,"%10ld %10ld %10ld %10ld " 
-	          "%10ld %10ld %10ld %10ld %10ld " 
-	          "%d\n",i+1
-	         ,elemt[i].node[0],elemt[i].node[4],elemt[i].node[7]
-		 ,elemt[i].node[3],elemt[i].node[1],elemt[i].node[5]
-		 ,elemt[i].node[6],elemt[i].node[2]
-		 ,elemt[i].body);
-	}
-      fprintf(f,"end hexa8");
+        write_int(i+1,bin,f);
+	no = (int )elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[4];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[7];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[3];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[5];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[6];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }
+      if(!bin)
+        fprintf(f,"end hexa8");
       fprintf(stderr,"\nElementos escritos.\n");
       break;
 /*-------------------------------------------------------------------*/ 
@@ -239,17 +336,32 @@ void write_mef_cell(FILE *f){
 /*---*/    
     case 23:
       fprintf(stderr,"\nQuad8");
-      fprintf(f,"quad8\n");
-      for( i = 0 ; i < nelem ; i ++)
-	fprintf(f,"%10ld "
-	          "%10ld %10ld %10ld %10ld "
-	          "%10ld %10ld %10ld %10ld "
-	          " %3d\n",i+1
-	         ,elemt[i].node[0],elemt[i].node[1],elemt[i].node[2]
-		 ,elemt[i].node[3],elemt[i].node[4],elemt[i].node[5]
-		 ,elemt[i].node[6],elemt[i].node[7]
-		 ,elemt[i].body);
-      fprintf(f,"end quad8");
+      if(!bin)
+        fprintf(f,"quad8\n");
+      for( i = 0 ; i < nelem ; i ++){
+        write_int(i+1,bin,f);
+	no = (int)elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[3];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[4];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[5];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[6];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[7];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }
+      if(!bin)
+        fprintf(f,"end quad8");
       fprintf(stderr,"\nElementos escritos.\n");
       break;
 /*-------------------------------------------------------------------*/  
@@ -261,7 +373,8 @@ void write_mef_cell(FILE *f){
       break;
 /*-------------------------------------------------------------------*/
     }
-  fprintf(f,"\nreturn\n");
+  if(!bin)
+    fprintf(f,"\nreturn\n");
 /*...................................................................*/  
 /*===================================================================*/  
 }
@@ -299,20 +412,19 @@ void write_restricion(FILE *f)
   }
   exit(0);
 */
-    
+/*    
   fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
         if(nodeset[i].gid[2] || nodeset[i].gid[3])
-//      if(nodeset[i].gid[0])
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");
-    
+*/    
 /*...*/  
-    
+/*   
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
@@ -324,18 +436,18 @@ void write_restricion(FILE *f)
           fprintf(f,"%10d %20.8e\n",no,200.0);
   }
   fprintf(f,"end nodalsources\n");
-  
+*/  
 /**/
-      
+/*      
   fprintf(stderr,"\nintialtemp...");
   fprintf(f,"initialtemp\n");
   for(i=0;i<nnode;i++){
     fprintf(f,"%10d %20.8e\n",i+1,50.0);
   }  
   fprintf(f,"end initialtemp\n");
-    
+*/    
   /*...................................................................*/
-   
+/*   
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
@@ -348,8 +460,9 @@ void write_restricion(FILE *f)
       if(nodeset[i].gid[5] )
         fprintf(f,"%10d %s\n",no,"1 1 1");
   }
-  fprintf(f,"end constraindisp\n");  
+  fprintf(f,"end constraindisp\n"); */ 
 /*...................................................................*/
+/*
   fprintf(stderr,"\nnodalforces...");
   fprintf(f,"nodalforces\n");
    for(i=0;i<nnodeset;i++){
@@ -367,6 +480,25 @@ void write_restricion(FILE *f)
    	
   }
   fprintf(f,"end nodalforces\n");  
+  fprintf(f,"return\n");
+  fprintf(stderr,"\nescrito restricion..");
+*/  
+  fprintf(stderr,"\nconstraindisp...");
+  fprintf(f,"constraindisp\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no,"1");
+  }
+  fprintf(f,"end constraindisp\n");  
+  fprintf(stderr,"\nnodalloads...");
+  fprintf(f,"nodalloads\n");
+   for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if( nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no,"1");
+  }
+  fprintf(f,"end nodalloads\n");  
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
 /*===================================================================*/  
@@ -550,3 +682,110 @@ double dot(double *x,double *y,int n){
 
   return tm;
 }
+
+/* ********************************************************************
+ *  Function: force_big_endian
+ *
+ *  Purpose:
+ *      Determines if the machine is little-endian.  If so, then
+ *      , for binary data, it will force the data to be big-endian.
+ *
+ *  Note:       This assumes that all inputs are 4 bytes long.
+ *
+ *  Programmer: Hank Childs
+ *  Creation:   September 3, 2004
+ * 
+ * *******************************************************************/
+
+static void force_big_endian(unsigned char *bytes,bool cod,int nbytes)
+{
+    static int doneTest = 0;
+    static int shouldSwap = 0;
+    if (!doneTest)
+    {
+        int tmp1 = 1;
+        unsigned char *tmp2 = (unsigned char *) &tmp1;
+        if (*tmp2 != 0)
+            shouldSwap = 1;
+        doneTest = 1;
+    }
+
+    if (shouldSwap & cod)
+    {
+	if(nbytes==8){
+//          fprintf(stderr,"8 bytes\n");
+          unsigned char tmp = bytes[0];
+          bytes[0] = bytes[7];
+          bytes[7] = tmp;
+          tmp = bytes[1];
+          bytes[1] = bytes[6];
+          bytes[6] = tmp;
+          tmp = bytes[2];
+          bytes[2] = bytes[5];
+          bytes[5] = tmp;
+          tmp = bytes[3];
+          bytes[3] = bytes[4];
+          bytes[4] = tmp;
+	}
+        else if(nbytes==4){	
+/*	  fprintf(stderr,"4 bytes\n");*/
+          unsigned char tmp = bytes[0];
+          bytes[0] = bytes[3];
+          bytes[3] = tmp;
+          tmp = bytes[1];
+          bytes[1] = bytes[2];
+          bytes[2] = tmp;
+       }
+    }
+}
+
+static void write_double(double val,bool cod,FILE *f)
+{
+    if (cod)
+    {
+        force_big_endian((unsigned char *) &val,cod,8);
+        fwrite(&val, sizeof(double), 1, f);
+    }
+    else
+    {
+        char str[128];
+        sprintf(str, "%20.12e ", val);
+        fprintf(f, str);
+    }
+}
+/* *******************************************************************
+ *  Function: write_int
+ *
+ *  Purpose:
+ *      Writes an integer to the currently open file.  This routine
+ *      takes care of ASCII vs binary issues.
+ *
+ *  Programmer: Hank Childs
+ *  Creation:   September 3, 2004
+ * 
+ * *******************************************************************/
+
+static void write_int(int val,bool cod,FILE *f)
+{
+    if (cod)
+    {
+        force_big_endian((unsigned char *) &val,cod,4);
+        fwrite(&val, sizeof(int), 1, f);
+    }
+    else
+    {
+        char str[128];
+        sprintf(str, "%d ", val);
+        fprintf(f, str);
+
+    }
+}
+
+static void new_section(bool cod,FILE *f){
+ 
+  if(cod);
+  else
+    fprintf(f,"\n");
+
+}
+
