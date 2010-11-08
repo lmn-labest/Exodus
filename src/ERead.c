@@ -200,7 +200,7 @@ int type_elm(char *s)
      i = 3;
   else if(!strcmp(s,"TETRA"))
      i = 4;
-  else if(!strcmp(s,"HEX8"))
+  else if(!strcmp(s,"HEX"))
      i = 5;
   else if(!strcmp(s,"QUAD8"))
      i = 23;

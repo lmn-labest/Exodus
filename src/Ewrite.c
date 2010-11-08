@@ -17,8 +17,8 @@ void write_mef(char *ins){
 /*===================================================================*/
 /**/
 /*=== arquivos binarias auxiliares*/  
-  coorbin = true;
-  elmbin  = true;
+  coorbin = false;
+  elmbin  = false;
 /*===================================================================*/
 /**/
 /*=== Manipulação do nome do arquivo*/  
@@ -248,7 +248,7 @@ void write_mef_cell(FILE *f,bool bin){
 /**/  
 /*===*/
   tp=elemt[0].type;
-  fprintf(stderr,"\nEscrevendo Elementos...");
+  fprintf(stderr,"\nEscrevendo Elementos...%d");
 /*...*/
   switch(tp){
 /*---*/    
@@ -412,7 +412,7 @@ void write_restricion(FILE *f)
   }
   exit(0);
 */
-/*    
+      
   fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
@@ -422,9 +422,9 @@ void write_restricion(FILE *f)
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");
-*/    
+      
 /*...*/  
-/*   
+     
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
@@ -436,18 +436,18 @@ void write_restricion(FILE *f)
           fprintf(f,"%10d %20.8e\n",no,200.0);
   }
   fprintf(f,"end nodalsources\n");
-*/  
+    
 /**/
-/*      
+        
   fprintf(stderr,"\nintialtemp...");
   fprintf(f,"initialtemp\n");
   for(i=0;i<nnode;i++){
     fprintf(f,"%10d %20.8e\n",i+1,50.0);
   }  
   fprintf(f,"end initialtemp\n");
-*/    
-  /*...................................................................*/
-/*   
+      
+/*...................................................................*/
+     
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
@@ -460,9 +460,9 @@ void write_restricion(FILE *f)
       if(nodeset[i].gid[5] )
         fprintf(f,"%10d %s\n",no,"1 1 1");
   }
-  fprintf(f,"end constraindisp\n"); */ 
+  fprintf(f,"end constraindisp\n");    
 /*...................................................................*/
-/*
+  
   fprintf(stderr,"\nnodalforces...");
   fprintf(f,"nodalforces\n");
    for(i=0;i<nnodeset;i++){
@@ -482,7 +482,7 @@ void write_restricion(FILE *f)
   fprintf(f,"end nodalforces\n");  
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
-*/  
+/*  
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
@@ -501,6 +501,7 @@ void write_restricion(FILE *f)
   fprintf(f,"end nodalloads\n");  
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
+*/
 /*===================================================================*/  
 }
 double modF(int no,double *f)
