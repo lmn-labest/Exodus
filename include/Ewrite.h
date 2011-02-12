@@ -8,5 +8,6 @@ void write_head_mef  (FILE *,char*,char*,char*,bool,bool);
 void write_mef_coor  (FILE *,bool);
 void write_mef_cell  (FILE *,bool);
 void write_restricion(FILE *);
+void tetraf(int);
 #endif /* EWRITE_H */
 

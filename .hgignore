@@ -1,0 +1,5 @@
+glob:*.a 
+glob:*.e 
+glob:*.dat
+glob:*.o 
+glob:*.swp

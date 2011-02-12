@@ -5,12 +5,12 @@ void propnode_malloc_geral(int *nincid,int *incid,int *el
   long i;
   nincid = (int*) malloc(nnode*sizeof(int));
   mynodegrade(el,nnode,numel,nen,nincid,maxgrade);
-  fprintf(stderr,"%d\n",*maxgrade);
+/*  fprintf(stderr,"%d\n",*maxgrade);*/
   incid = (int*) malloc(nnode*(*maxgrade)*sizeof(int));
   myelmnicid (el,incid,nincid,nnode,numel,nen,*maxgrade);
   
-//  for(i=0;i<nnode;i++)
-//    fprintf(stderr,"no=%d maxgrade=%d\n",i+1,nincid[i]);
+/*  for(i=0;i<nnode;i++)*/
+/*    fprintf(stderr,"no=%d maxgrade=%d\n",i+1,nincid[i]);*/
   
   pnode.nincid = nincid;
   pnode.incid  = incid;

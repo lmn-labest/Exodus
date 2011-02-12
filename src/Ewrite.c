@@ -9,6 +9,9 @@ static void force_big_endian(unsigned char *,bool,int);
 static void write_int(int,bool,FILE*);
 static void new_section(bool cod,FILE *f);
 
+/* funcao de apoio*/
+double distno(int,int);
+
 void write_mef(char *ins){
 /*===*/
   FILE *fileout[3];
@@ -44,10 +47,10 @@ void write_mef(char *ins){
 /*=== arquivo principal*/ 
   fileout[0]=fopen(s[0],"w");
   if (fileout==NULL){ 
-    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[0]);
+    fprintf(stderr,"Erro na abertura do arquivo: %s\n",s[0]);
     exit(1);
   } 
-  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[0]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s[0]);
 /*...................................................................*/
 /**/
 /*...*/
@@ -58,10 +61,10 @@ void write_mef(char *ins){
 /*=== arquivo da coordenadas*/  
   fileout[1]=fopen(s[1],"wb");
   if (fileout==NULL){ 
-    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[1]);
+    fprintf(stderr,"Erro na abertura do arquivo: %s\n",s[1]);
     exit(1);
   } 
-  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[1]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s[1]);
   write_mef_coor(fileout[1],coorbin);
   fclose(fileout[1]);
 /*===================================================================*/
@@ -69,10 +72,10 @@ void write_mef(char *ins){
 /*=== arquivo das connectividades*/  
   fileout[2]=fopen(s[2],"wb");
   if (fileout==NULL){ 
-    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[2]);
+    fprintf(stderr,"Erro na abertura do arquivo: %s\n",s[2]);
     exit(1);
   } 
-  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[2]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s[2]);
   write_mef_cell(fileout[2],elmbin);
   fclose(fileout[2]);
 /*===================================================================*/
@@ -80,10 +83,10 @@ void write_mef(char *ins){
 /*=== arquivo das restricoes*/  
   fileout[3]=fopen(s[3],"w");
   if (fileout==NULL){ 
-    fprintf(stderr,"Erro na abertura do arquivo:%s\n",s[3]);
+    fprintf(stderr,"Erro na abertura do arquivo: %s\n",s[3]);
     exit(1);
   } 
-  fprintf(stderr,"\nsucesso na abertura do arquivo:%s",s[3]);
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s[3]);
   write_restricion(fileout[3]);
   fclose(fileout[3]);
 /*===================================================================*/
@@ -248,7 +251,7 @@ void write_mef_cell(FILE *f,bool bin){
 /**/  
 /*===*/
   tp=elemt[0].type;
-  fprintf(stderr,"\nEscrevendo Elementos...%d");
+  fprintf(stderr,"\nEscrevendo Elementos...");
 /*...*/
   switch(tp){
 /*---*/    
@@ -272,12 +275,12 @@ void write_mef_cell(FILE *f,bool bin){
       }	
       if(!bin)
         fprintf(f,"end quad4");
-      fprintf(stderr,"\nElementos escritos.\n");
+      fprintf(stderr,"\nElementos escritos.");
       break;
 /*-------------------------------------------------------------------*/  
 /*---*/    
     case 4:
-      fprintf(stderr,"\nTetraedros");
+      fprintf(stderr,"\nTetra4");
       if(!bin)
         fprintf(f,"tetra4\n");
       for( i = 0 ; i < nelem ; i ++){
@@ -296,13 +299,13 @@ void write_mef_cell(FILE *f,bool bin){
       }		 
       if(!bin)		 
         fprintf(f,"end tetra4");
-      fprintf(stderr,"\nElementos escritos.\n");
+      fprintf(stderr,"\nElementos escritos.");
       break;
 /*-------------------------------------------------------------------*/  
 /**/      
 /*---*/    
     case 5:
-      fprintf(stderr,"\nHexaedros");
+      fprintf(stderr,"\nHexa8");
       if(!bin)
         fprintf(f,"hexa8\n");
       for( i = 0 ; i < nelem ; i ++){
@@ -329,7 +332,7 @@ void write_mef_cell(FILE *f,bool bin){
       }
       if(!bin)
         fprintf(f,"end hexa8");
-      fprintf(stderr,"\nElementos escritos.\n");
+      fprintf(stderr,"\nElementos escritos.");
       break;
 /*-------------------------------------------------------------------*/ 
 /**/
@@ -362,7 +365,7 @@ void write_mef_cell(FILE *f,bool bin){
       }
       if(!bin)
         fprintf(f,"end quad8");
-      fprintf(stderr,"\nElementos escritos.\n");
+      fprintf(stderr,"\nElementos escritos.");
       break;
 /*-------------------------------------------------------------------*/  
 /*---*/
@@ -397,22 +400,13 @@ void write_restricion(FILE *f)
 /*===*/
   int i,j,k,nset;
   int no;
+  int no1,no2,nel;
+  double dl;
   double x,y;
   double force[3],mf;
 /*===================================================================*/  
 /*...*/
-/* teste do calculoda area cubo
-  for(i=0;i<nnodeset;i++){
-      no = nodeset[i].num;
-      if(nodeset[i].gid[2] || nodeset[i].gid[3]){
-        fprintf(stderr,"\nno = %d\n",no);
-	mf = modF(no);
-        fprintf(stderr,"f = %lf\n",mf);
-      }	
-  }
-  exit(0);
-*/
-      
+/*      
   fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
@@ -422,9 +416,9 @@ void write_restricion(FILE *f)
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");
-      
+*/      
 /*...*/  
-     
+/*     
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
@@ -436,50 +430,71 @@ void write_restricion(FILE *f)
           fprintf(f,"%10d %20.8e\n",no,200.0);
   }
   fprintf(f,"end nodalsources\n");
-    
+*/    
 /**/
-        
+/*        
   fprintf(stderr,"\nintialtemp...");
   fprintf(f,"initialtemp\n");
   for(i=0;i<nnode;i++){
     fprintf(f,"%10d %20.8e\n",i+1,50.0);
   }  
   fprintf(f,"end initialtemp\n");
-      
+*/      
 /*...................................................................*/
      
   fprintf(stderr,"\nconstraindisp...");
-  fprintf(f,"constraindisp\n");
+  fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-      if((nodeset[i].gid[0] || nodeset[i].gid[1]) 
-        && !nodeset[i].gid[5])
-        fprintf(f,"%10d %s\n",no,"0 0 1");
-      if((nodeset[i].gid[2]) && !nodeset[i].gid[5])
-        fprintf(f,"%10d %s\n",no,"1 1 0");
-      if(nodeset[i].gid[5] )
-        fprintf(f,"%10d %s\n",no,"1 1 1");
+      if(nodeset[i].gid[1] && !nodeset[i].gid[2])
+        fprintf(f,"%10d %s\n",no,"1");
   }
-  fprintf(f,"end constraindisp\n");    
+  fprintf(f,"end constraintemp\n");    
 /*...................................................................*/
   
-  fprintf(stderr,"\nnodalforces...");
-  fprintf(f,"nodalforces\n");
-   for(i=0;i<nnodeset;i++){
-      if( nodeset[i].gid[3]){
-        no = nodeset[i].num;
-	mf = modF(no,force);
+  fprintf(stderr,"\nnodalsources...");
+  fprintf(f,"nodalsources\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[1] && !nodeset[i].gid[2])
+        fprintf(f,"%10d %s\n",no,"20.0");
+      if(nodeset[i].gid[0]){
+/*calcula aproximadamente a area de influencia de um no atraves
+ * da distancia de um aresta qualquer de um elemento a qual akelo no
+ * pertence( para carga distribuida na face)*/      
+/*      nel = pnode.incid[(no-1)*pnode.maxgrade];*
+        no1 = elemt[nel-1].node[0];
+        no2 = elemt[nel-1].node[1];
+        dl=distno(no2,no1);*/
+        fprintf(f,"%10d %lf\n",no,10.0);
+      }	
+  }
+  fprintf(f,"end nodalsources\n");    
+
+        
+  fprintf(stderr,"\nintialtemp...");
+  fprintf(f,"initialtemp\n");
+  for(i=0;i<nnode;i++){
+    fprintf(f,"%10d %20.8e\n",i+1,20.0);
+  }  
+  fprintf(f,"end initialtemp\n");
+        
+
+//  fprintf(stderr,"\nnodalforces...");
+//  fprintf(f,"nodalforces\n");
+//  for(i=0;i<nnodeset;i++){
+//       if(nodeset[i].gid[0]){
+//          no = nodeset[i].num;
+//	  mf = modF(no,force);
 //        fprintf(stderr,"no= %d\nforce=(%lf,%lf,%lf)\n|force| = %lf\n"
 //	       ,no,force[0],force[1]
 //	       ,force[2],mf);
-        fprintf(f,"%10d %20.8e %20.8e %20.8e\n",no,-force[0]
-	        ,-force[1]
-//	        ,force[2]/(10000.0*10000.0));
-  	        ,0.0);
-      }
+//          fprintf(f,"%10d %20.8e\n",no,mf);
+//          fprintf(f,"%10d\n",no);
+//	}  
+//      }
    	
-  }
-  fprintf(f,"end nodalforces\n");  
+//  fprintf(f,"end nodalforces\n");  
   fprintf(f,"return\n");
   fprintf(stderr,"\nescrito restricion..");
 /*  
@@ -506,7 +521,7 @@ void write_restricion(FILE *f)
 }
 double modF(int no,double *f)
 {
-#define F  65000000.0
+#define F  0.5
   int *face=NULL;
   int i,j,k,kk,l;
   int grade;
@@ -518,23 +533,23 @@ double modF(int no,double *f)
 
   face = (int*) calloc(8*4,sizeof(int));
   kk = 0;
-//  fprintf(stderr,"\nno=%d\n",no);
+  fprintf(stderr,"\nno=%d\n",no);
   grade=pnode.nincid[no-1];
-//  fprintf(stderr,"grade=%d\n",grade);
+/*  fprintf(stderr,"grade=%d\n",grade);*/
 /* loop no elementos q este no compartilha*/
   for(i=0;i<grade;i++){
     nel = pnode.incid[(no-1)*pnode.maxgrade+i];
-  //  fprintf(stderr,"nel=%d\n",nel);
+    fprintf(stderr,"nel=%d\n",nel);
     for(j=0;j<maxno;j++){
       shno = elemt[nel-1].node[j];
-    //  fprintf(stderr,"nel=%d no=%d\n",nel,shno);
+      fprintf(stderr,"nel=%d no=%d\n",nel,shno);
 /* verifica se esse no esta na superficie desejada*/
       for(k=0;k<nnodeset;k++){
         idno = nodeset[k].num;
 	if( shno == idno ){
 	  if( shno == idno ){
-	    if(nodeset[k].gid[3]){
-//	      fprintf(stderr,"idno=%d kk=%d\n",idno,kk);
+	    if(nodeset[k].gid[0]){
+  	      fprintf(stderr,"idno=%d kk=%d\n",idno,kk);
               face[kk] = idno;
 	      kk++;
 	    }  
@@ -545,18 +560,18 @@ double modF(int no,double *f)
   }
   
   nfaces = kk/4;
-//printf("\n");
-//for(i=0;i<nfaces*4;i++)
-//  printf("%d face=%d\n",i+1,face[i]);
+  printf("\n");
+  for(i=0;i<nfaces*4;i++)
+    printf("%d face=%d\n",i+1,face[i]);
 /**/
 /*calculo da area das faces*/  
   for(i=0;i<nfaces;i++){
     maketri(&face[i*4],T1,T2,T3,T4);
-//fprintf(stderr,"\n");
-//fprintf(stderr,"T1=(%d %d %d)\n",T1[0],T1[1],T1[2]);
-//fprintf(stderr,"T2=(%d %d %d)\n",T2[0],T2[1],T2[2]);
-//fprintf(stderr,"T3=(%d %d %d)\n",T3[0],T3[1],T3[2]);
-//fprintf(stderr,"T4=(%d %d %d)\n",T4[0],T4[1],T4[2]);
+/*  fprintf(stderr,"\n");*/
+/*  fprintf(stderr,"T1=(%d %d %d)\n",T1[0],T1[1],T1[2]);*/
+/*  fprintf(stderr,"T2=(%d %d %d)\n",T2[0],T2[1],T2[2]);*/
+/*  fprintf(stderr,"T3=(%d %d %d)\n",T3[0],T3[1],T3[2]);*/
+/*  fprintf(stderr,"T4=(%d %d %d)\n",T4[0],T4[1],T4[2]);*/
     A[0]=getarea(T1,n);
     A[1]=getarea(T2,n);
     A[2]=getarea(T3,n);
@@ -599,6 +614,16 @@ void maketri(int *face,int *T1, int *T2,int *T3,int *T4){
   T2[2] = T3[2]                 = face[2];
   T1[2] = T4[2]                 = face[3];
   T2[1]                         = face[3];
+
+}
+
+double distno(int no1,int no2){
+
+  double x21,y21,z21;
+  x21 = node[no2-1].x - node[no1-1].x;
+  y21 = node[no2-1].y - node[no1-1].y;
+  z21 = node[no2-1].z - node[no1-1].z;
+  return sqrt( x21*x21 + y21*y21 + z21*z21 );  
 
 }
 

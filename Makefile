@@ -15,7 +15,7 @@ OBJS= $(fontes:%.c=%.o)
 
 build:	$(OBJS) 
 	ls bin || mkdir -p bin
-	$(CC)  $(OBJS)  -o bin/$(name)  $(LDFLAGS)  
+	$(CC)  $(OBJS) -Wall -o bin/$(name) $(LDFLAGS)  
 list:
 	(cd dist/$(projeto); ls $(projeto)_*.md5  \
 	| sort  -r > files_$(projeto))
