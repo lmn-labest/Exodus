@@ -381,6 +381,72 @@ void write_mef_cell(FILE *f,bool bin){
 /*...................................................................*/  
 /*===================================================================*/  
 }
+
+
+/*********************************************************************
+ * write_gid      : saida para o gid                                 *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * f         - arquivo de saida                                      *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+ void write_gid(char *prefixo){
+   int GiD_PostAscii;
+   int ngid;
+   int id;
+   int elmi[20];
+   char s[200];
+   int i;
+
+   strcpy(s,prefixo);
+   strcat(s,".msh");
+   GiD_PostAscii = 0;
+   GiD_OpenPostMeshFile(s,GiD_PostAscii);
+   
+   if(dim == 2)
+     ngid = GiD_2D;
+   
+   else if(dim == 3)
+     ngid = GiD_3D;
+     
+   if(elemt[0].type == 4)
+     GiD_BeginMesh("Cubit mesh", ngid, GiD_Tetrahedra, 4);
+   else{
+     printf("Somente elementos tetraedricos\n");
+     exit(EXIT_FAILURE);
+   }  
+     
+  /* coordinates */
+
+   GiD_BeginCoordinates();
+   for ( i = 0; i < nnode; i++ ) {
+    id = i + 1;
+    GiD_WriteCoordinates( id, node[i].x, node[i].y, node[i].z );
+   }
+   GiD_EndCoordinates();
+   
+/* elements */
+  GiD_BeginElements();
+  for ( i = 0; i < nelem; i++ ) {
+/*tetraedros*/    
+    if(elemt[i].type == 4){
+      id = i + 1;
+      elmi[0] = elemt[i].node[0];
+      elmi[1] = elemt[i].node[1];
+      elmi[2] = elemt[i].node[2];
+      elmi[3] = elemt[i].node[3];
+      elmi[4] = elemt[i].body;
+      GiD_WriteElementMat(id, elmi);
+    }  
+  }
+  
+  GiD_EndElements();
+  GiD_EndMesh();
+  GiD_ClosePostMeshFile();
+ }
 /*********************************************************************/
 /*********************************************************************
  * GAMBIARRA PARA O POCO:                                            *
@@ -441,8 +507,9 @@ void write_restricion(FILE *f)
   fprintf(f,"end initialtemp\n");
 */      
 /*...................................................................*/
-     
-  fprintf(stderr,"\nconstraindisp...");
+
+/*... incendio*/
+/*  fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
@@ -450,53 +517,55 @@ void write_restricion(FILE *f)
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");    
+*/  
 /*...................................................................*/
   
-  fprintf(stderr,"\nnodalsources...");
+/*  fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
       if(nodeset[i].gid[1] && !nodeset[i].gid[2])
         fprintf(f,"%10d %s\n",no,"20.0");
-      if(nodeset[i].gid[0]){
+      if(nodeset[i].gid[0]){*/
 /*calcula aproximadamente a area de influencia de um no atraves
  * da distancia de um aresta qualquer de um elemento a qual akelo no
  * pertence( para carga distribuida na face)*/      
-/*      nel = pnode.incid[(no-1)*pnode.maxgrade];*
+/*      nel = pnode.incid[(no-1)*pnode.maxgrade];
         no1 = elemt[nel-1].node[0];
         no2 = elemt[nel-1].node[1];
-        dl=distno(no2,no1);*/
+        dl=distno(no2,no1);
         fprintf(f,"%10d %lf\n",no,10.0);
       }	
   }
   fprintf(f,"end nodalsources\n");    
-
+*/
         
-  fprintf(stderr,"\nintialtemp...");
-  fprintf(f,"initialtemp\n");
-  for(i=0;i<nnode;i++){
-    fprintf(f,"%10d %20.8e\n",i+1,20.0);
-  }  
-  fprintf(f,"end initialtemp\n");
+//fprintf(stderr,"\nintialtemp...");
+//fprintf(f,"initialtemp\n");
+//for(i=0;i<nnode;i++){
+//  fprintf(f,"%10d %20.8e\n",i+1,20.0);
+//}  
+//fprintf(f,"end initialtemp\n");
         
+  fprintf(stderr,"\nconstraintemp...");
+  fprintf(f,"constraintemp\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no,"1");
+  }
+  fprintf(f,"end constraintemp\n");    
 
-//  fprintf(stderr,"\nnodalforces...");
-//  fprintf(f,"nodalforces\n");
-//  for(i=0;i<nnodeset;i++){
-//       if(nodeset[i].gid[0]){
-//          no = nodeset[i].num;
-//	  mf = modF(no,force);
-//        fprintf(stderr,"no= %d\nforce=(%lf,%lf,%lf)\n|force| = %lf\n"
-//	       ,no,force[0],force[1]
-//	       ,force[2],mf);
-//          fprintf(f,"%10d %20.8e\n",no,mf);
-//          fprintf(f,"%10d\n",no);
-//	}  
-//      }
-   	
-//  fprintf(f,"end nodalforces\n");  
+  fprintf(stderr,"\nnodalsources...");
+  fprintf(f,"nodalsources\n");
+  for(i=0;i<nnodeset;i++){
+       no = nodeset[i].num;
+       if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no,"1200.0");
+  }	
+  fprintf(f,"end nodalsources\n");  
   fprintf(f,"return\n");
-  fprintf(stderr,"\nescrito restricion..");
+//  fprintf(stderr,"\nescrito restricion..");//
 /*  
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");

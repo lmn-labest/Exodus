@@ -1,5 +1,7 @@
 #!/bin/sh
 name = eread
+CC=gcc
+CXX=g++
 fontes = \
          src/Emain.c\
 	 src/ERead.c\
@@ -9,13 +11,14 @@ fontes = \
 OS= $(shell uname -s)
 #CFLAGS=-I./include/ -O2 -D_DEBUG 
 CFLAGS=-I./include/ -O2  
-LDFLAGS=-L./lib -lm -lexoIIv2c -lnetcdf
+CXXFLAGS=-I./include/ -O2  
+LDFLAGS=-L./lib -lm -lexoIIv2c -lgidpost -lnetcdf
 
 OBJS= $(fontes:%.c=%.o)
 
 build:	$(OBJS) 
 	ls bin || mkdir -p bin
-	$(CC)  $(OBJS) -Wall -o bin/$(name) $(LDFLAGS)  
+	$(CXX) $(CXXFLAGS)  $(OBJS) -Wall -o bin/$(name) $(LDFLAGS)  
 list:
 	(cd dist/$(projeto); ls $(projeto)_*.md5  \
 	| sort  -r > files_$(projeto))
