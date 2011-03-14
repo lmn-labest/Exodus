@@ -194,14 +194,18 @@ void error_exo(int error , char *field){
 /*********************************************************************/ 
 int type_elm(char *s)
 {
-  short i;
-/*  fprintf(stderr," type %s\n",s);*/
+  short i=0;
+ /* fprintf(stderr," type %s\n",s);*/
+  if(!strcmp(s,"TRI"))
+     i = 2;
   if(!strcmp(s,"QUAD"))
      i = 3;
   else if(!strcmp(s,"TETRA"))
      i = 4;
   else if(!strcmp(s,"HEX"))
      i = 5;
+  else if(!strcmp(s,"TRI6"))
+     i = 22;
   else if(!strcmp(s,"QUAD8"))
      i = 23;
   return i;

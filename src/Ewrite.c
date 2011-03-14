@@ -255,6 +255,28 @@ void write_mef_cell(FILE *f,bool bin){
 /*...*/
   switch(tp){
 /*---*/    
+    case 2:
+      fprintf(stderr,"\nTria3");
+      if(!bin)
+        fprintf(f,"tria3\n");
+      for( i = 0 ; i < nelem ; i ++){
+        write_int(i+1,bin,f);
+	no = (int )elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }	
+      if(!bin)
+        fprintf(f,"end tria3");
+      fprintf(stderr,"\nElementos escritos.");
+      break;
+/*-------------------------------------------------------------------*/  
+/*---*/    
     case 3:
       fprintf(stderr,"\nQuad4");
       if(!bin)
@@ -336,6 +358,32 @@ void write_mef_cell(FILE *f,bool bin){
       break;
 /*-------------------------------------------------------------------*/ 
 /**/
+    case 22:
+      fprintf(stderr,"\nTria6");
+      if(!bin)
+        fprintf(f,"tria6\n");
+      for( i = 0 ; i < nelem ; i ++){
+        write_int(i+1,bin,f);
+	no = (int)elemt[i].node[0];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[1];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[2];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[3];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[4];
+        write_int(no,bin,f);
+	no = (int)elemt[i].node[5];
+        write_int(no,bin,f);
+	no = (int)elemt[i].body;
+        write_int(no,bin,f);
+	new_section(bin,f);
+      }
+      if(!bin)
+        fprintf(f,"end tria6");
+      fprintf(stderr,"\nElementos escritos.");
+      break;
 /*---*/    
     case 23:
       fprintf(stderr,"\nQuad8");
@@ -540,30 +588,30 @@ void write_restricion(FILE *f)
   fprintf(f,"end nodalsources\n");    
 */
         
-//fprintf(stderr,"\nintialtemp...");
-//fprintf(f,"initialtemp\n");
-//for(i=0;i<nnode;i++){
-//  fprintf(f,"%10d %20.8e\n",i+1,20.0);
-//}  
-//fprintf(f,"end initialtemp\n");
+  fprintf(stderr,"\nintialtemp...");
+  fprintf(f,"initialtemp\n");
+  for(i=0;i<nnode;i++){
+    fprintf(f,"%10d %20.8e\n",i+1,20.0);
+  }  
+  fprintf(f,"end initialtemp\n");
         
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-      if(nodeset[i].gid[0])
+      if(nodeset[i].gid[0] || nodeset[i].gid[1])
         fprintf(f,"%10d %s\n",no,"1");
   }
   fprintf(f,"end constraintemp\n");    
 
-  fprintf(stderr,"\nnodalsources...");
-  fprintf(f,"nodalsources\n");
-  for(i=0;i<nnodeset;i++){
-       no = nodeset[i].num;
-       if(nodeset[i].gid[0])
-        fprintf(f,"%10d %s\n",no,"1200.0");
-  }	
-  fprintf(f,"end nodalsources\n");  
+//  fprintf(stderr,"\nnodalsources...");
+//  fprintf(f,"nodalsources\n");
+//  for(i=0;i<nnodeset;i++){
+//       no = nodeset[i].num;
+//       if(nodeset[i].gid[0])
+//        fprintf(f,"%10d %s\n",no,"1200.0");
+//  }	
+//  fprintf(f,"end nodalsources\n");  
   fprintf(f,"return\n");
 //  fprintf(stderr,"\nescrito restricion..");//
 /*  
