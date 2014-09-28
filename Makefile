@@ -12,7 +12,7 @@ OS= $(shell uname -s)
 #CFLAGS=-I./include/ -O2 -D_DEBUG 
 CFLAGS=-I./include/ -O2  
 CXXFLAGS=-I./include/ -O2  
-LDFLAGS=-L./lib -lm -lexoIIv2c -lgidpost -lnetcdf
+LDFLAGS=-L./lib -lm -lexoIIv2c -lgidpost -lnetcdf -lm
 
 OBJS= $(fontes:%.c=%.o)
 

@@ -3,15 +3,28 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<math.h>
+#define pi 3.14
 
 static void write_double(double,bool,FILE*);
 static void force_big_endian(unsigned char *,bool,int);
 static void write_int(int,bool,FILE*);
 static void new_section(bool cod,FILE *f);
+static void trocaFace(void);
 
 /* funcao de apoio*/
 double distno(int,int);
 
+/*********************************************************************
+ * write_mef : escreve o arquivo no formato                          *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * ins       - nome do arquivo de saida                              *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
 void write_mef(char *ins){
 /*===*/
   FILE *fileout[3];
@@ -43,7 +56,11 @@ void write_mef(char *ins){
   
   strcat(s[3],"_restricion.dat");
 /*===================================================================*/
-/**/  
+
+/*== renumera as faces*/
+  trocaFace();
+/*===================================================================*/
+  
 /*=== arquivo principal*/ 
   fileout[0]=fopen(s[0],"w");
   if (fileout==NULL){ 
@@ -92,7 +109,7 @@ void write_mef(char *ins){
 /*===================================================================*/
 }
 /*********************************************************************/
-/**/
+
 /*********************************************************************
  * write_head_mef : escreve o arquivo principal no formato           *
  *                  do mef_par                                       *
@@ -119,7 +136,7 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3
 /*...*/
   fprintf(f,"mesh\n"
             "nnode %ld numel %ld ndf numat %ld maxno therm dim %d\n"
-	    ,nnode,nelem,nbody,dim);
+         ,nnode,nelem,nbody,dim);
 /*...................................................................*/
 /**/
 /*...*/  
@@ -138,16 +155,16 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3
   if(elmbin){
     tp=elemt[0].type;
     switch (tp){
-      case 3:
+      case QUAD4:
       strcpy(type,"quad4bin");
       break;
-      case 4:
+      case TETRA4:
       strcpy(type,"tetra4bin");
       break;
-      case 5:
+      case HEXA8:
       strcpy(type,"hexa8bin");
       break;
-      case 23:
+      case QUAD8:
       strcpy(type,"quad8bin");
       break;
     }
@@ -164,7 +181,7 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3
 /*********************************************************************/
 /**/
 /*********************************************************************
- * write_head_coor : escreve o arquivo dos elementos                 *
+ * write_head_coor : escreve o arquivo dos coordenadas               *
  *------------------------------------------------------------------ *
  * parametros de entrada :                                           *
  * ----------------------------------------------------------------- *
@@ -196,10 +213,10 @@ void write_mef_coor(FILE *f,bool bin)
     case 2:
       for (i = 0 ; i < nnode ; i++){
         write_int(i+1,bin,f);
-	write_double(node[i].x,bin,f);
-	write_double(node[i].y,bin,f);
-	new_section(bin,f);
-      }	
+        write_double(node[i].x,bin,f);
+        write_double(node[i].y,bin,f);
+        new_section(bin,f);
+      }
       break;
 /*-------------------------------------------------------------------*/
 /**/
@@ -207,18 +224,18 @@ void write_mef_coor(FILE *f,bool bin)
     case 3:
       for (i = 0 ; i < nnode ; i++){
         write_int(i+1,bin,f);
-	write_double(node[i].x,bin,f);
-	write_double(node[i].y,bin,f);
-	write_double(node[i].z,bin,f);
-	new_section(bin,f);
-      }	
+        write_double(node[i].x,bin,f);
+        write_double(node[i].y,bin,f);
+        write_double(node[i].z,bin,f);
+        new_section(bin,f);
+      }
       break;
 /*-------------------------------------------------------------------*/
 /**/
 /*---*/      
     default:
       printf("Numero de dimesoes invalido.\n"
-	     "funcao write_mef_coor(FILE *f) arquivo = NAME\n");
+      "funcao write_mef_coor(FILE *f) arquivo = NAME\n");
       exit(0);
       break;
 /*-------------------------------------------------------------------*/      
@@ -246,190 +263,230 @@ void write_mef_cell(FILE *f,bool bin){
 /*===*/  
   short tp;
   long i;
-  int no;
+  int no,j;
+  int typeElm[NTYPEELM],nElm[6];
+  char nameElm[NTYPEELM][10] ={"tria3","quad4","tetra4"
+                              ,"hexa8","tria6","quad8"}; 
 /*=====================================================================*/
-/**/  
-/*===*/
-  tp=elemt[0].type;
-  fprintf(stderr,"\nEscrevendo Elementos...");
-/*...*/
-  switch(tp){
-/*---*/    
-    case 2:
-      fprintf(stderr,"\nTria3");
-      if(!bin)
-        fprintf(f,"tria3\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int )elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }	
-      if(!bin)
-        fprintf(f,"end tria3");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
-/*-------------------------------------------------------------------*/  
-/*---*/    
-    case 3:
-      fprintf(stderr,"\nQuad4");
-      if(!bin)
-        fprintf(f,"quad4\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int )elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[3];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }	
-      if(!bin)
-        fprintf(f,"end quad4");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
-/*-------------------------------------------------------------------*/  
-/*---*/    
-    case 4:
-      fprintf(stderr,"\nTetra4");
-      if(!bin)
-        fprintf(f,"tetra4\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int )elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[3];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }		 
-      if(!bin)		 
-        fprintf(f,"end tetra4");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
-/*-------------------------------------------------------------------*/  
-/**/      
-/*---*/    
-    case 5:
-      fprintf(stderr,"\nHexa8");
-      if(!bin)
-        fprintf(f,"hexa8\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int )elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[4];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[7];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[3];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[5];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[6];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }
-      if(!bin)
-        fprintf(f,"end hexa8");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
-/*-------------------------------------------------------------------*/ 
 /**/
-    case 22:
-      fprintf(stderr,"\nTria6");
-      if(!bin)
-        fprintf(f,"tria6\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int)elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[3];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[4];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[5];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }
-      if(!bin)
-        fprintf(f,"end tria6");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
+  typeElm[0] = TRIA3;
+  typeElm[1] = QUAD4;
+  typeElm[2] = TETRA4;
+  typeElm[3] = HEXA8;
+  typeElm[4] = TRIA6;
+  typeElm[5] = QUAD8;
+  nElm[0]    = 0;
+  nElm[1]    = 0;
+  nElm[2]    = 0;
+  nElm[3]    = 0;
+  nElm[4]    = 0;
+  nElm[5]    = 0;
+/*...*/
+  for(j = 0; j < NTYPEELM;j++)
+    for( i = 0 ; i < nelem ; i ++){
+      tp=elemt[i].type;
+      switch(tp){
 /*---*/    
-    case 23:
-      fprintf(stderr,"\nQuad8");
-      if(!bin)
-        fprintf(f,"quad8\n");
-      for( i = 0 ; i < nelem ; i ++){
-        write_int(i+1,bin,f);
-	no = (int)elemt[i].node[0];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[1];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[2];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[3];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[4];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[5];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[6];
-        write_int(no,bin,f);
-	no = (int)elemt[i].node[7];
-        write_int(no,bin,f);
-	no = (int)elemt[i].body;
-        write_int(no,bin,f);
-	new_section(bin,f);
-      }
-      if(!bin)
-        fprintf(f,"end quad8");
-      fprintf(stderr,"\nElementos escritos.");
-      break;
+          case TRIA3:
+          nElm[0]++;
+          break;
+/*-------------------------------------------------------------------*/  
+/*---*/    
+          case QUAD4:
+          nElm[1]++;
+          break;
+/*-------------------------------------------------------------------*/  
+/*---*/    
+          case TETRA4:
+          nElm[2]++;
+          break;
 /*-------------------------------------------------------------------*/  
 /*---*/
-    default:
-      printf("Numero de elemento invalido.\n"
-	     "funcao write_mef_cell(FILE *f) arquivo = NAME\n");
-      exit(0);
-      break;
+          case HEXA8:
+          nElm[3]++;
+          break;
+/*-------------------------------------------------------------------*/ 
+/*---*/    
+          case TRIA6:
+          nElm[4]++;
+          break;
+/*-------------------------------------------------------------------*/  
+/*---*/    
+          case QUAD8:
+          nElm[5]++;
+          break;
+/*-------------------------------------------------------------------*/  
+/*---*/
+          default:
+          printf("Numero de elemento invalido.\n");
+          exit(0);
+          break;
+/*-------------------------------------------------------------------*/
+        }
+      
+    }
+/*.....................................................................*/
+
+/*===*/
+  fprintf(stderr,"\nEscrevendo Elementos...");
+  for(j = 0; j < NTYPEELM;j++){
+    if(nElm[j]){
+      fprintf(stderr,"\n%s",nameElm[j]);
+      if(!bin)
+        fprintf(f,"%s\n",nameElm[j]);
+    }
+    for( i = 0 ; i < nelem ; i ++){
+      tp=elemt[i].type;
+      if( tp == typeElm[j]){  
+/*...*/
+        switch(tp){
+/*--- tria3*/    
+          case TRIA3:
+          write_int(i+1,bin,f);
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- quad4*/    
+          case QUAD4:
+          write_int(i+1,bin,f);
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- tetra4*/    
+          case TETRA4:
+          write_int(i+1,bin,f);
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- hexa8*/
+          case HEXA8:
+          write_int(i+1,bin,f);
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[4];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[7];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[5];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[6];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/ 
+
+/*... tria6*/
+          case TRIA6:
+          write_int(i+1,bin,f);
+          no = (int)elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[4];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[5];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/ 
+
+/*-... quad8*/    
+          case QUAD8:
+          write_int(i+1,bin,f);
+          no = (int)elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[4];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[5];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[6];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[7];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*...*/
+          default:
+          printf("Numero de elemento invalido.\n");
+          exit(0);
+          break;
+/*-------------------------------------------------------------------*/
+        }
+/*-------------------------------------------------------------------*/
+      }
+/*-------------------------------------------------------------------*/
+    } 
+/*-------------------------------------------------------------------*/
+    if(nElm[j]){
+      fprintf(stderr,"\nend %s",nameElm[j]);
+      if(!bin)
+        fprintf(f,"end %s\n",nameElm[j]);
 /*-------------------------------------------------------------------*/
     }
+/*-------------------------------------------------------------------*/
+  }
+  fprintf(stderr,"\nElementos escritos.");
   if(!bin)
-    fprintf(f,"\nreturn\n");
-/*...................................................................*/  
-/*===================================================================*/  
+    fprintf(f,"return\n");
+/*...................................................................*/
+/*===================================================================*/
 }
-
+/*********************************************************************/
 
 /*********************************************************************
  * write_gid      : saida para o gid                                 *
@@ -440,7 +497,8 @@ void write_mef_cell(FILE *f,bool bin){
  *------------------------------------------------------------------ *
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
- *********************************************************************/  
+ * OBS: utiliza a lib gidPost                                        *
+ *********************************************************************/
  void write_gid(char *prefixo){
    int GiD_PostAscii;
    int ngid;
@@ -496,15 +554,13 @@ void write_mef_cell(FILE *f,bool bin){
   GiD_ClosePostMeshFile();
  }
 /*********************************************************************/
+
 /*********************************************************************
- * GAMBIARRA PARA O POCO:                                            *
- *                                                                   *
+ * GAMBIARRA: para escrever as restricoes                            *
  *------------------------------------------------------------------ *
  * parametros de entrada :                                           *
  * ----------------------------------------------------------------- *
  * f         - arquivo de saida                                      *
- * file_coor - nome do arquivo de coordenadas                        *
- * file_elem - nome do arquivo de elementos                          *
  *------------------------------------------------------------------ *
  * parametros de saida :                                             *
  * ----------------------------------------------------------------- *
@@ -513,127 +569,90 @@ void write_restricion(FILE *f)
 {
 /*===*/
   int i,j,k,nset;
-  int no;
+  int no,el,side;
   int no1,no2,nel;
   double dl;
   double x,y;
   double force[3],mf;
 /*===================================================================*/  
 /*...*/
-/*      
-  fprintf(stderr,"\nEscrevendo restricion..");
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-        if(nodeset[i].gid[2] || nodeset[i].gid[3])
-        fprintf(f,"%10d %s\n",no,"1");
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no, "1");
+      if(nodeset[i].gid[1])
+        fprintf(f,"%10d %s\n",no, "1");
   }
-  fprintf(f,"end constraintemp\n");
-*/      
-/*...*/  
-/*     
+  
+  fprintf(f,"end constraintemp\n");    
+  fprintf(f,"nodalsources\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no, "25");
+      if(nodeset[i].gid[1])
+        fprintf(f,"%10d %s\n",no, "100");
+  }
+  
+  fprintf(f,"end nodalsources\n");
+  fprintf(f,"return\n");
+  return;
+  
+/*
+  fprintf(stderr,"\nconstraintemp...");
+  fprintf(f,"constraintemp\n");
+  for(i=0;i<nnodeset;i++){
+    no = nodeset[i].num;
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %d\n",no,1);
+      if(nodeset[i].gid[1])
+        fprintf(f,"%10d %d\n",no,1);
+  }
+  fprintf(f,"end constraintemp\n");    
+
   fprintf(stderr,"\nnodalsources...");
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-        if(nodeset[i].gid[2])
-//      if(nodeset[i].gid[0])
-          fprintf(f,"%10d %20.8e\n",no,50.0);
-        else if(nodeset[i].gid[3])
-          fprintf(f,"%10d %20.8e\n",no,200.0);
-  }
-  fprintf(f,"end nodalsources\n");
-*/    
-/**/
-/*        
-  fprintf(stderr,"\nintialtemp...");
-  fprintf(f,"initialtemp\n");
-  for(i=0;i<nnode;i++){
-    fprintf(f,"%10d %20.8e\n",i+1,50.0);
-  }  
-  fprintf(f,"end initialtemp\n");
-*/      
-/*...................................................................*/
-
-/*... incendio*/
-/*  fprintf(stderr,"\nconstraindisp...");
-  fprintf(f,"constraintemp\n");
-  for(i=0;i<nnodeset;i++){
-      no = nodeset[i].num;
-      if(nodeset[i].gid[1] && !nodeset[i].gid[2])
-        fprintf(f,"%10d %s\n",no,"1");
-  }
-  fprintf(f,"end constraintemp\n");    
-*/  
-/*...................................................................*/
-  
-/*  fprintf(stderr,"\nnodalsources...");
-  fprintf(f,"nodalsources\n");
-  for(i=0;i<nnodeset;i++){
-      no = nodeset[i].num;
-      if(nodeset[i].gid[1] && !nodeset[i].gid[2])
-        fprintf(f,"%10d %s\n",no,"20.0");
-      if(nodeset[i].gid[0]){*/
-/*calcula aproximadamente a area de influencia de um no atraves
- * da distancia de um aresta qualquer de um elemento a qual akelo no
- * pertence( para carga distribuida na face)*/      
-/*      nel = pnode.incid[(no-1)*pnode.maxgrade];
-        no1 = elemt[nel-1].node[0];
-        no2 = elemt[nel-1].node[1];
-        dl=distno(no2,no1);
-        fprintf(f,"%10d %lf\n",no,10.0);
-      }	
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %15.5lf\n",no,   2.0);
+      if(nodeset[i].gid[1])
+        fprintf(f,"%10d %15.5lf\n",no,   1.0);
   }
   fprintf(f,"end nodalsources\n");    
-*/
-        
-  fprintf(stderr,"\nintialtemp...");
-  fprintf(f,"initialtemp\n");
-  for(i=0;i<nnode;i++){
-    fprintf(f,"%10d %20.8e\n",i+1,20.0);
-  }  
-  fprintf(f,"end initialtemp\n");
-        
-  fprintf(stderr,"\nconstraintemp...");
-  fprintf(f,"constraintemp\n");
-  for(i=0;i<nnodeset;i++){
-      no = nodeset[i].num;
-      if(nodeset[i].gid[0] || nodeset[i].gid[1])
-        fprintf(f,"%10d %s\n",no,"1");
-  }
-  fprintf(f,"end constraintemp\n");    
+  return;*/
 
-//  fprintf(stderr,"\nnodalsources...");
-//  fprintf(f,"nodalsources\n");
-//  for(i=0;i<nnodeset;i++){
-//       no = nodeset[i].num;
-//       if(nodeset[i].gid[0])
-//        fprintf(f,"%10d %s\n",no,"1200.0");
-//  }	
-//  fprintf(f,"end nodalsources\n");  
-  fprintf(f,"return\n");
-//  fprintf(stderr,"\nescrito restricion..");//
-/*  
   fprintf(stderr,"\nconstraindisp...");
   fprintf(f,"constraindisp\n");
   for(i=0;i<nnodeset;i++){
       no = nodeset[i].num;
-      if(nodeset[i].gid[0])
-        fprintf(f,"%10d %s\n",no,"1");
+      if(nodeset[i].gid[2] && (!nodeset[i].gid[5]&&!nodeset[i].gid[6]))
+        fprintf(f,"%10d %s\n",no, "0 1 0");
+      if(nodeset[i].gid[9] && !nodeset[i].gid[5])
+        fprintf(f,"%10d %s\n",no, "0 0 1");
+      if(nodeset[i].gid[5])
+        fprintf(f,"%10d %s\n",no, "0 1 1");
+      if(nodeset[i].gid[3] && !nodeset[i].gid[6])
+        fprintf(f,"%10d %s\n",no, "1 0 0");
+      if(nodeset[i].gid[6])
+        fprintf(f,"%10d %s\n",no, "1 1 0");
   }
-  fprintf(f,"end constraindisp\n");  
-  fprintf(stderr,"\nnodalloads...");
-  fprintf(f,"nodalloads\n");
-   for(i=0;i<nnodeset;i++){
-      no = nodeset[i].num;
-      if( nodeset[i].gid[0])
-        fprintf(f,"%10d %s\n",no,"1");
+  fprintf(f,"end constraindisp\n");    
+
+
+  
+  fprintf(stderr,"\nintialtemp...");
+  fprintf(f,"initialtemp\n");
+  for(i=0;i<nnode;i++){
+      fprintf(f,"%10d %15.5lf\n",i+1,25.0);
   }
-  fprintf(f,"end nodalloads\n");  
+  fprintf(f,"end initialtemp\n");
   fprintf(f,"return\n");
+
   fprintf(stderr,"\nescrito restricion..");
-*/
+  
 /*===================================================================*/  
 }
 double modF(int no,double *f)
@@ -795,7 +814,7 @@ double getarea(int*T,double *n){
   return A;
 }
 
-/*sub tracao de vetores*/
+/*subtracao de vetores*/
 void  subvetor(double* V1,double* aux2,double* aux1,int n){
   
   int i;
@@ -918,7 +937,7 @@ static void write_int(int val,bool cod,FILE *f)
     else
     {
         char str[128];
-        sprintf(str, "%d ", val);
+        sprintf(str, "%16d ", val);
         fprintf(f, str);
 
     }
@@ -929,6 +948,44 @@ static void new_section(bool cod,FILE *f){
   if(cod);
   else
     fprintf(f,"\n");
+
+}
+/********************************************************************* 
+ * chanceFce                                                         * 
+ *-------------------------------------------------------------------* 
+ * Parametros de entrada:                                            * 
+ *-------------------------------------------------------------------* 
+ *                                                                   * 
+ *-------------------------------------------------------------------* 
+ * Parametros de saida:                                              * 
+ *-------------------------------------------------------------------* 
+ *                                                                   * 
+ *-------------------------------------------------------------------* 
+ * OBS:                                                              * 
+ *-------------------------------------------------------------------* 
+ *********************************************************************/
+static void trocaFace(void){
+
+  int  temp[6],el,i,tp;
+/*=== reorganicao das faces*/
+   for(i=0;i<nsideset;i++){
+    el                 = sideset[i].num;
+    tp=elemt[el-1].type;
+    switch (tp){
+/*tetraedro*/
+      case TETRA4:
+        temp[0]            = sideset[i].side[0];
+        temp[1]            = sideset[i].side[1];
+        temp[2]            = sideset[i].side[2];
+        temp[3]            = sideset[i].side[3];
+        sideset[i].side[0] =  temp[0];
+        sideset[i].side[1] =  temp[3];
+        sideset[i].side[2] =  temp[1];
+        sideset[i].side[3] =  temp[2];
+      break;
+    }
+  }
+/*===================================================================*/
 
 }
 

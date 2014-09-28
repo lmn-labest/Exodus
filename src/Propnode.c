@@ -70,7 +70,6 @@ void mynodegrade(int *el,long nnode,long numel,int nen,int *nincid
 /*********************************************************************/
 
 /*********************************************************************/
-/*                                                                   */
 /* ELMINID  : Função do arquivo Colormesh do George. Determina o nume*/ 
 /* ro maximo de apariçoes dos nos na malha.                          */ 
 /* ----------------------------------------------------------------- */ 
