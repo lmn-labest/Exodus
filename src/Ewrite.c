@@ -11,9 +11,63 @@ static void force_big_endian(unsigned char *,bool,int);
 static void write_int(int,bool,FILE*);
 static void new_section(bool cod,FILE *f);
 static void trocaFace(void);
+static void trocaFaceMvf(void);
 
 /* funcao de apoio*/
 double distno(int,int);
+
+/*********************************************************************
+ * write_mvf : escreve o arquivo no formato mvf                      *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * ins       - nome do arquivo de saida                              *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+void write_mvf(char *ins){
+/*===*/
+  FILE *fileout=NULL;
+  char s[200];
+/*===================================================================*/
+
+/*=== Manipulação do nome do arquivo*/  
+  strcpy(s,ins);
+  strcat(s,".dat");
+  
+/*===================================================================*/
+
+/*== renumera as faces*/
+  trocaFaceMvf();
+/*===================================================================*/
+  
+/*=== arquivo principal*/ 
+  fileout=fopen(s,"w");
+  if (fileout==NULL){ 
+    fprintf(stderr,"Erro na abertura do arquivo: %s\n",s);
+    exit(1);
+  } 
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s);
+/*...................................................................*/
+/**/
+/*...*/
+/*===================================================================*/
+/**/
+/*=== arquivo da coordenadas*/  
+  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s);
+  write_mvf_coor(fileout);
+/*===================================================================*/
+/**/
+/*=== arquivo das connectividades*/  
+  write_mvf_cell(fileout);
+/*===================================================================*/
+/**/
+/*=== arquivo das restricoes*/  
+  write_mvf_res(fileout);
+/*===================================================================*/
+}
+/*********************************************************************/
 
 /*********************************************************************
  * write_mef : escreve o arquivo no formato                          *
@@ -136,7 +190,7 @@ void write_head_mef(FILE *f,char *file1,char *file2,char *file3
 /*...*/
   fprintf(f,"mesh\n"
             "nnode %ld numel %ld ndf numat %ld maxno therm dim %d\n"
-         ,nnode,nelem,nbody,dim);
+            ,nnode,nelem,nbody,dim);
 /*...................................................................*/
 /**/
 /*...*/  
@@ -248,9 +302,295 @@ void write_mef_coor(FILE *f,bool bin)
 /*===================================================================*/
 }
 /*********************************************************************/  
-/**/
 /*********************************************************************
- * write_head_cell: escreve o arquivo dos elementos                  *
+ * write_mvf_coor : escreve o arquivo dos coordenadas                *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * f         - arquivo de saida                                      *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+void write_mvf_coor(FILE *f)
+{
+/*===*/  
+  long i;
+  double x;
+  bool bin = false;
+/*===================================================================*/
+/**/
+/*===*/
+  fprintf(stderr,"\nEscrevendo coordenadas...");
+  fprintf(f,"coordinates\n");
+/*...*/
+  switch(dim){
+/*--- 1 dimencao*/
+    case 1:
+      printf("Não implementado\n");
+      break;
+/*-------------------------------------------------------------------*/
+/**/
+/*---2 dimencoes*/      
+    case 2:
+      for (i = 0 ; i < nnode ; i++){
+        write_int(i+1,bin,f);
+        write_double(node[i].x,bin,f);
+        write_double(node[i].y,bin,f);
+        new_section(bin,f);
+      }
+      break;
+/*-------------------------------------------------------------------*/
+/**/
+/*---3 dimencoes*/      
+    case 3:
+      for (i = 0 ; i < nnode ; i++){
+        write_int(i+1,bin,f);
+        write_double(node[i].x,bin,f);
+        write_double(node[i].y,bin,f);
+        write_double(node[i].z,bin,f);
+        new_section(bin,f);
+      }
+      break;
+/*-------------------------------------------------------------------*/
+/**/
+/*---*/      
+    default:
+      printf("Numero de dimesoes invalido.\n"
+      "funcao write_mef_coor(FILE *f) arquivo = NAME\n");
+      exit(0);
+      break;
+/*-------------------------------------------------------------------*/      
+  }
+/*...................................................................*/
+  fprintf(stderr,"\ncoordenadas escritas.");
+  fprintf(f,"endCoordinates\n");
+
+/*===================================================================*/
+}
+/*********************************************************************/  
+
+/*********************************************************************
+ * write_mef_cell: escreve o arquivo dos elementos                   *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * f         - arquivo de saida                                      *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+void write_mvf_cell(FILE *f){
+/*===*/  
+  short tp;
+  long i;
+  int no,j,nel;
+  bool bin = false;
+/*=====================================================================*/
+/**/
+
+/*===*/
+  fprintf(stderr,"\nEscrevendo Elementos...");
+  fprintf(f,"cells\n");
+  for( i = 0 ; i < nelem ; i ++){
+    tp=elemt[i].type;
+/*...*/
+    switch(tp){
+/*--- tria3*/    
+      case TRIA3:
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
+/*... mat*/          
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+/*... tipo geometrico*/
+          write_int(2,bin,f);
+/*... */                 
+          write_int(3,bin,f);
+          write_int(3,bin,f);
+/*...*/
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+          new_section(bin,f);
+      break;
+/*-------------------------------------------------------------------*/  
+
+/*--- quad4*/    
+      case QUAD4:
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
+/*... mat*/          
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+/*... tipo geometrico*/
+          write_int(3,bin,f);
+/*... */                 
+          write_int(4,bin,f);
+          write_int(4,bin,f);
+/*...*/
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          new_section(bin,f);
+      break;
+/*-------------------------------------------------------------------*/  
+
+/*--- tetra4*/    
+      case TETRA4:
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
+/*... mat*/          
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+/*... tipo geometrico*/
+          write_int(4,bin,f);
+/*... */                 
+          write_int(4,bin,f);
+          write_int(4,bin,f);
+/*...*/
+          no = (int )elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          new_section(bin,f);
+      break;
+/*-------------------------------------------------------------------*/  
+
+/*--- hexa8*/
+      case HEXA8:
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
+/*... mat*/          
+          no = (int)elemt[i].body;
+          write_int(no,bin,f);
+/*... tipo geometrico*/
+          write_int(5,bin,f);
+/*... */                 
+          write_int(8,bin,f);
+          write_int(6,bin,f);
+/*...*/
+          no = (int)elemt[i].node[0];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[1];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[4];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[5];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[6];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[7];
+          write_int(no,bin,f);
+          new_section(bin,f);
+      break;
+/*-------------------------------------------------------------------*/ 
+
+/*...*/
+      default:
+        printf("Numero de elemento invalido.\n");
+        exit(0);
+        break;
+/*-------------------------------------------------------------------*/
+    }
+/*-------------------------------------------------------------------*/
+  }
+/*-------------------------------------------------------------------*/
+  fprintf(f,"endCells\n");
+  fprintf(stderr,"\nElementos escritos.");
+/*...................................................................*/
+/*===================================================================*/
+}
+/*********************************************************************/
+
+/*********************************************************************
+ * write_mvf_res: escreve as restricoes                              *
+ *------------------------------------------------------------------ *
+ * parametros de entrada :                                           *
+ * ----------------------------------------------------------------- *
+ * f         - arquivo de saida                                      *
+ *------------------------------------------------------------------ *
+ * parametros de saida :                                             *
+ * ----------------------------------------------------------------- *
+ *********************************************************************/  
+void write_mvf_res(FILE *f)
+{
+/*===*/
+  int i,j,side,nFace;
+  int el,nel;
+/*===================================================================*/  
+
+/*...*/
+  
+  fprintf(stderr,"\nfaceRd1...");
+  fprintf(f,"faceRd1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el    = sideset[i].num;
+      nel   =  elemt[el-1].num; 
+      fprintf(f,"%10d %2d",nel,7);
+      for(j=0;j<6;j++){
+        side = sideset[i].side[j];
+        if(side == 1 || side == 2 || side == 3  || side == 4 )
+          fprintf(f,"%3d ",1);
+        else
+          fprintf(f,"%3d ",side);
+      }
+      fprintf(f,"%3d ",0);
+      fprintf(f,"\n");
+    } 
+  }
+  fprintf(f,"endFaceRd1\n"); 
+  fprintf(stderr,"\nfaceRd1 escrito.");
+  
+  fprintf(stderr,"\nfaceSd1...");
+  fprintf(f,"faceSd1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el    = sideset[i].num;
+      nel   =  elemt[el-1].num; 
+      fprintf(f,"%10d %2d ",nel,7);
+      for(j=0;j<6;j++){
+        side = sideset[i].side[j];
+        if(side == 1)
+          fprintf(f,"%16.6lf ",100.0);
+        else if(side == 2)
+          fprintf(f,"%16.6lf ",1000.0);
+        else if(side == 3)
+          fprintf(f,"%16.6lf ",1000.0);
+        else if(side == 4)
+          fprintf(f,"%16.6lf ",100.0);
+        else
+          fprintf(f,"%16.6lf ",0.0);
+      }
+      fprintf(f,"%16.6lf ",0.0);
+      fprintf(f,"\n");
+    } 
+  }
+  fprintf(f,"endFaceSd1\n"); 
+  fprintf(stderr,"\nfaceR1 escrito.");
+}
+
+/*********************************************************************
+ * write_mef_cell: escreve o arquivo dos elementos                   *
  *------------------------------------------------------------------ *
  * parametros de entrada :                                           *
  * ----------------------------------------------------------------- *
@@ -263,7 +603,7 @@ void write_mef_cell(FILE *f,bool bin){
 /*===*/  
   short tp;
   long i;
-  int no,j;
+  int no,j,nel;
   int typeElm[NTYPEELM],nElm[6];
   char nameElm[NTYPEELM][10] ={"tria3","quad4","tetra4"
                               ,"hexa8","tria6","quad8"}; 
@@ -342,7 +682,8 @@ void write_mef_cell(FILE *f,bool bin){
         switch(tp){
 /*--- tria3*/    
           case TRIA3:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int )elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
@@ -357,7 +698,8 @@ void write_mef_cell(FILE *f,bool bin){
 
 /*--- quad4*/    
           case QUAD4:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int )elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
@@ -374,7 +716,8 @@ void write_mef_cell(FILE *f,bool bin){
 
 /*--- tetra4*/    
           case TETRA4:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int )elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
@@ -391,7 +734,8 @@ void write_mef_cell(FILE *f,bool bin){
 
 /*--- hexa8*/
           case HEXA8:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int )elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[4];
@@ -416,7 +760,8 @@ void write_mef_cell(FILE *f,bool bin){
 
 /*... tria6*/
           case TRIA6:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int)elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
@@ -437,7 +782,8 @@ void write_mef_cell(FILE *f,bool bin){
 
 /*-... quad8*/    
           case QUAD8:
-          write_int(i+1,bin,f);
+          nel = elemt[i].num;
+          write_int(nel,bin,f);
           no = (int)elemt[i].node[0];
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
@@ -575,7 +921,38 @@ void write_restricion(FILE *f)
   double x,y;
   double force[3],mf;
 /*===================================================================*/  
+
 /*...*/
+  
+  fprintf(stderr,"\nfaceR1...");
+  fprintf(f,"faceR1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el  = sideset[i].num;
+//      nel =  elemt[el-1].num;  
+      fprintf(f,"%10d ",nel);
+      for(j=0;j<elemt[nel-1].nen+1;j++){
+        side = sideset[i].side[j];
+        fprintf(f,"%3d ",side);
+      }
+      fprintf(f,"\n");
+    } 
+  }
+  fprintf(f,"end faceR1\n"); 
+   
+  fprintf(f,"nodalsources\n");
+  for(i=0;i<nnodeset;i++){
+      no = nodeset[i].num;
+      if(nodeset[i].gid[0])
+        fprintf(f,"%10d %s\n",no, "25");
+      if(nodeset[i].gid[1])
+        fprintf(f,"%10d %s\n",no, "100");
+  }
+  
+  fprintf(f,"end nodalsources\n");
+  fprintf(f,"return\n");
+  return;
+
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
   for(i=0;i<nnodeset;i++){
@@ -951,7 +1328,7 @@ static void new_section(bool cod,FILE *f){
 
 }
 /********************************************************************* 
- * chanceFce                                                         * 
+ * chanceFace                                                        * 
  *-------------------------------------------------------------------* 
  * Parametros de entrada:                                            * 
  *-------------------------------------------------------------------* 
@@ -988,4 +1365,48 @@ static void trocaFace(void){
 /*===================================================================*/
 
 }
+
+/********************************************************************* 
+ * chanceFace                                                        * 
+ *-------------------------------------------------------------------* 
+ * Parametros de entrada:                                            * 
+ *-------------------------------------------------------------------* 
+ *                                                                   * 
+ *-------------------------------------------------------------------* 
+ * Parametros de saida:                                              * 
+ *-------------------------------------------------------------------* 
+ *                                                                   * 
+ *-------------------------------------------------------------------* 
+ * OBS:                                                              * 
+ *-------------------------------------------------------------------* 
+ *********************************************************************/
+static void trocaFaceMvf(void){
+
+  int  temp[6],el,i,tp;
+/*=== reorganicao das faces*/
+   for(i=0;i<nsideset;i++){
+    el                 = sideset[i].num;
+    tp=elemt[el-1].type;
+    switch (tp){
+/*tetraedro*/
+      case HEXA8: 
+        temp[0]            = sideset[i].side[0];
+        temp[1]            = sideset[i].side[1];
+        temp[2]            = sideset[i].side[2];
+        temp[3]            = sideset[i].side[3];
+        temp[4]            = sideset[i].side[4];
+        temp[5]            = sideset[i].side[5];
+        sideset[i].side[0] =  temp[4];
+        sideset[i].side[1] =  temp[5];
+        sideset[i].side[2] =  temp[0];
+        sideset[i].side[3] =  temp[1];
+        sideset[i].side[4] =  temp[2];
+        sideset[i].side[5] =  temp[3];
+      break;
+    }
+  }
+/*===================================================================*/
+
+}
+
 

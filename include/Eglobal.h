@@ -31,6 +31,7 @@ typedef struct NODE{
 }NODE;
 typedef struct ELEMT{
   int nen;
+  int  num;  
   long node[NO_MAX_POR_ELM];
   int type;
   int body;

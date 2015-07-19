@@ -20,7 +20,6 @@ void propnode_malloc_geral(int *nincid,int *incid,int *el
 
 
 /*********************************************************************/
-/*                                                                   */  
 /* NODEGRADE: Função do arquivo Colormesh do George. Determina o num */  
 /* ro maximo de apariçoes dos nos na malha.                          */  
 /* ----------------------------------------------------------------- */  

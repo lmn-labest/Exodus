@@ -12,7 +12,8 @@ int main(int argc, char **argv)
     printf("erad: <input exodus file> <software"
             " output> <prefixo name output>\n"
 	    "-g - gid file\n"
-	    "-m - mefpar file\n");
+	    "-m - mefpar file\n"  
+	    "-v - mvf    file\n");
     exit(EXIT_FAILURE);
   }
 /*===================================================================*/  
@@ -26,6 +27,10 @@ int main(int argc, char **argv)
     if(!strcmp(argv[2],"-m")){ 
       fprintf(stderr,"Write file mefpar %s",argv[3]);
       write_mef(argv[3]);
+    }  
+    else if(!strcmp(argv[2],"-v")){ 
+      fprintf(stderr,"Write file mvf %s",argv[3]);
+      write_mvf(argv[3]);
     }  
     else if(!strcmp(argv[2],"-g")){ 
       fprintf(stderr,"Write file gid %s",argv[3]);

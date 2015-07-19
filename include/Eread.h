@@ -11,6 +11,7 @@ void error_exo(int error , char *field);
 void contnodeset(int *v,char*nv,long *n,int num);
 void insertionsort2Vector(int *v,int *b,int n);
 void insertionsort3Vector(int *v,int *b1,int *b2,int n);
+void reNumElm(void);
 
 #endif /* EREAD_H */
 

@@ -150,7 +150,7 @@ void read_elem_exo(exoid){
   char element_type[MAX_STR_LENGTH + 1];
   int id,num_el_in_blk,num_nod_per_el,num_attr,px;
   int *connect=NULL;
-  int i,j,ii,jj=0,error =0 ;
+  int i,nel,j,ii,jj=0,error =0 ;
   float *attrib;
 /*===================================================================*/
 /**/
@@ -178,15 +178,23 @@ void read_elem_exo(exoid){
     free(connect);
   } 
 /*===================================================================*/
+
+/*renumera de elementos*/  
+//reNumElm();
+/*===================================================================*/
+
 /*===*/
   connect = (int *) malloc(nelem*maxno*sizeof(int));
   for(i=0;i<nelem;i++){
-    px = maxno*i;
+    elemt[i].num=i+1;
+    nel = elemt[i].num-1;
+    px = maxno*nel;
     for(j=0;j<maxno;j++)
       connect[px+j] = elemt[i].node[j];
   }  
   propnode_malloc_geral(pnode.nincid,pnode.incid,connect  
                        ,nnode,nelem,maxno,&(pnode.maxgrade));
+  
   free(connect);
 /*===================================================================*/  
 }
@@ -356,7 +364,7 @@ void read_carg_side_exo(int exoid){
   ERROR_MALLOC(id,__LINE__,__func__,__FILE__);
   k = 0;
 #if _DEBUG
-  printf("num_total  %d %f\n",num_total);
+  printf("num_total  %d\n",num_total);
 #endif
   for (i=0;i<ngeomsetside;i++){
     error     = ex_get_side_set_param (exoid,ids[i],&numset,&numdf);
@@ -368,11 +376,11 @@ void read_carg_side_exo(int exoid){
                                  ,elem_set_list,side_set_list);
 #if _DEBUG
     for(j=0;j<numset;j++){
-      fprintf(stderr,"id %d elem %d side %d\n",i,elem_set_list[j],side_set_list[j]);
+      printf("id %d elem %d side %d\n"
+             ,i,elem_set_list[j],side_set_list[j]);
     }
 #endif
-
-	  for( j = 0; j < numset; j++){ 
+	  for(j =0; j < numset; j++){ 
 	    side_list[j+k]  = side_set_list[j];
 	    elem_list[j+k]  = elem_set_list[j];
 	    id[j+k]         = ids[i];
@@ -519,3 +527,84 @@ void insertionsort3Vector(int *v,int *b1,int *b2,int n)
  }  
 }
 /*********************************************************************/
+
+/*********************************************************************/
+void reNumElm(void){
+  
+  int typeElm[NTYPEELM],nel=0;
+  int i,j,tp;
+  typeElm[0] = TRIA3;
+  typeElm[1] = QUAD4;
+  typeElm[2] = TETRA4;
+  typeElm[3] = HEXA8;
+  typeElm[4] = TRIA6;
+  typeElm[5] = QUAD8;
+/*... */
+  for(j = 0; j < NTYPEELM;j++){
+    for( i = 0 ; i < nelem ; i ++){
+      tp=elemt[i].type;
+      if( tp == typeElm[j]){  
+/*...*/
+        switch(tp){
+/*--- tria3*/    
+          case TRIA3:
+          nel++;  
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- quad4*/    
+          case QUAD4:
+          nel++;  
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- tetra4*/    
+          case TETRA4:
+          nel++; 
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*--- hexa8*/
+          case HEXA8:
+          nel++;  
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/ 
+
+/*... tria6*/
+          case TRIA6:
+          nel++;  
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/ 
+
+/*-... quad8*/    
+          case QUAD8:
+          nel++;  
+          elemt[i].num = nel;
+          break;
+/*-------------------------------------------------------------------*/  
+
+/*...*/
+          default:
+          printf("Numero de elemento invalido.\n");
+          exit(0);
+          break;
+/*-------------------------------------------------------------------*/
+        }
+/*-------------------------------------------------------------------*/
+      }
+/*-------------------------------------------------------------------*/
+    } 
+/*-------------------------------------------------------------------*/
+/*...................................................................*/
+/*===================================================================*/
+}
+/*********************************************************************/
+
+              
+}
+
