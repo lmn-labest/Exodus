@@ -9,10 +9,10 @@ fontes = \
 	 src/Propnode.c
 .SUFFIXES: .c .h .o
 OS= $(shell uname -s)
-#CFLAGS=-I./include/ -O2 -D_DEBUG 
-CFLAGS=-I./include/ -O2  
-CXXFLAGS=-I./include/ -O2  
-LDFLAGS=-L./lib -lm -lexoIIv2c -lgidpost -lnetcdf -lm
+CFLAGS=-I./include/ -I/mnt/netcdf-4.3.2/include -O2 -D_DEBUG 
+#CFLAGS=-I./include/ -O2  
+CXXFLAGS=-I./include/ -I/mnt/netcdf-4.3.2/include -O2  
+LDFLAGS=-L./lib -L/mnt/netcdf-4.3.2/lib -lm -lexodus -lgidpost -lnetcdf -lm
 
 OBJS= $(fontes:%.c=%.o)
 

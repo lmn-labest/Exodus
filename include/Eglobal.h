@@ -11,7 +11,7 @@
   }
 #define NO_MAX_POR_ELM 8
 #define MAX_FACE       6
-#define MAX_ID 10
+#define MAX_ID        20
 
 /*... definicao dos tipos dos elemetos*/
 #define NTYPEELM  6
@@ -24,12 +24,12 @@
 /*...................................................................*/
 
 /*...*/
-typedef struct NODE{
+typedef struct{
   double x;
   double y;
   double z;
 }NODE;
-typedef struct ELEMT{
+typedef struct{
   int nen;
   int  num;  
   long node[NO_MAX_POR_ELM];
@@ -39,13 +39,13 @@ typedef struct ELEMT{
 /*...................................................................*/
 
 /*...*/
-typedef struct NODESET{
+typedef struct{
   int num;
   char gid[MAX_ID];
   int ngid;
 }NODESET;
 
-typedef struct SIDESET{
+typedef struct{
   int  num;
   int  side[MAX_FACE];
   char gid[MAX_ID];
@@ -53,7 +53,7 @@ typedef struct SIDESET{
 }SIDESET;
 
 /*...*/
-typedef struct Pnode{
+typedef struct{
   int *nincid;
   int *incid;
   int maxgrade;

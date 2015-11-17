@@ -12,6 +12,7 @@ void contnodeset(int *v,char*nv,long *n,int num);
 void insertionsort2Vector(int *v,int *b,int n);
 void insertionsort3Vector(int *v,int *b1,int *b2,int n);
 void reNumElm(void);
+int type_elm(char *s);
 
 #endif /* EREAD_H */
 

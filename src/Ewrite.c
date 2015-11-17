@@ -48,7 +48,7 @@ void write_mvf(char *ins){
     fprintf(stderr,"Erro na abertura do arquivo: %s\n",s);
     exit(1);
   } 
-  fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s);
+//fprintf(stderr,"\nsucesso na abertura do arquivo: %s",s);
 /*...................................................................*/
 /**/
 /*...*/
@@ -302,6 +302,7 @@ void write_mef_coor(FILE *f,bool bin)
 /*===================================================================*/
 }
 /*********************************************************************/  
+
 /*********************************************************************
  * write_mvf_coor : escreve o arquivo dos coordenadas                *
  *------------------------------------------------------------------ *
@@ -463,9 +464,9 @@ void write_mvf_cell(FILE *f){
           write_int(no,bin,f);
           no = (int)elemt[i].node[1];
           write_int(no,bin,f);
-          no = (int)elemt[i].node[3];
-          write_int(no,bin,f);
           no = (int)elemt[i].node[2];
+          write_int(no,bin,f);
+          no = (int)elemt[i].node[3];
           write_int(no,bin,f);
           new_section(bin,f);
       break;
@@ -539,9 +540,9 @@ void write_mvf_res(FILE *f)
 /*===================================================================*/  
 
 /*...*/
-  
-  fprintf(stderr,"\nfaceRd1...");
-  fprintf(f,"faceRd1\n");
+/*  
+  fprintf(stderr,"\nfaceRt1...");
+  fprintf(f,"faceRt1\n");
   for(i=0;i<nsideset;i++){
     if(sideset[i].ngid){
       el    = sideset[i].num;
@@ -549,7 +550,7 @@ void write_mvf_res(FILE *f)
       fprintf(f,"%10d %2d",nel,7);
       for(j=0;j<6;j++){
         side = sideset[i].side[j];
-        if(side == 1 || side == 2 || side == 3  || side == 4 )
+        if(side)
           fprintf(f,"%3d ",1);
         else
           fprintf(f,"%3d ",side);
@@ -558,11 +559,11 @@ void write_mvf_res(FILE *f)
       fprintf(f,"\n");
     } 
   }
-  fprintf(f,"endFaceRd1\n"); 
+  fprintf(f,"endFaceRt1\n"); 
   fprintf(stderr,"\nfaceRd1 escrito.");
   
-  fprintf(stderr,"\nfaceSd1...");
-  fprintf(f,"faceSd1\n");
+  fprintf(stderr,"\nfaceLoadT1...");
+  fprintf(f,"faceLoadT1\n");
   for(i=0;i<nsideset;i++){
     if(sideset[i].ngid){
       el    = sideset[i].num;
@@ -570,23 +571,65 @@ void write_mvf_res(FILE *f)
       fprintf(f,"%10d %2d ",nel,7);
       for(j=0;j<6;j++){
         side = sideset[i].side[j];
-        if(side == 1)
-          fprintf(f,"%16.6lf ",100.0);
-        else if(side == 2)
-          fprintf(f,"%16.6lf ",1000.0);
-        else if(side == 3)
-          fprintf(f,"%16.6lf ",1000.0);
-        else if(side == 4)
-          fprintf(f,"%16.6lf ",100.0);
-        else
-          fprintf(f,"%16.6lf ",0.0);
+        fprintf(f,"%d ",side);
       }
-      fprintf(f,"%16.6lf ",0.0);
+      fprintf(f,"0 \n");
+    } 
+  }
+  fprintf(f,"endFaceLoadT1\n"); 
+  fprintf(stderr,"\nfaceLoadT1 escrito.");
+  
+  fprintf(f,"initialVel\n");
+  for(i=0;i<nelem;i++){
+    fprintf(f,"%d %s\n",i+1,"1.e0 1.e0 1.e0");
+  }
+  fprintf(f,"endInitialVel\n");
+  fprintf(f,"return\n");
+*/  
+  fprintf(stderr,"\nfaceRt1...");
+  fprintf(f,"faceRt1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el    = sideset[i].num;
+      nel   =  elemt[el-1].num; 
+      fprintf(f,"%10d %2d",nel,5);
+      for(j=0;j<4;j++){
+        side = sideset[i].side[j];
+        if(side)
+          fprintf(f,"%3d ",1);
+        else
+          fprintf(f,"%3d ",side);
+      }
+      fprintf(f,"%3d ",0);
       fprintf(f,"\n");
     } 
   }
-  fprintf(f,"endFaceSd1\n"); 
-  fprintf(stderr,"\nfaceR1 escrito.");
+  fprintf(f,"endFaceRt1\n"); 
+  fprintf(stderr,"\nfaceRd1 escrito.");
+  
+  fprintf(stderr,"\nfaceLoadT1...");
+  fprintf(f,"faceLoadT1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el    = sideset[i].num;
+      nel   =  elemt[el-1].num; 
+      fprintf(f,"%10d %2d ",nel,5);
+      for(j=0;j<4;j++){
+        side = sideset[i].side[j];
+        fprintf(f,"%d ",side);
+      }
+      fprintf(f,"0 \n");
+    } 
+  }
+  fprintf(f,"endFaceLoadT1\n"); 
+  fprintf(stderr,"\nfaceLoadT1 escrito.");
+  
+  fprintf(f,"initialVel\n");
+  for(i=0;i<nelem;i++){
+    fprintf(f,"%d %s\n",i+1,"1.e0 1.e0 1.e0");
+  }
+  fprintf(f,"endInitialVel\n");
+  fprintf(f,"return\n");
 }
 
 /*********************************************************************
@@ -924,8 +967,8 @@ void write_restricion(FILE *f)
 
 /*...*/
   
-  fprintf(stderr,"\nfaceR1...");
-  fprintf(f,"faceR1\n");
+  fprintf(stderr,"\nfaceT1...");
+  fprintf(f,"faceT1\n");
   for(i=0;i<nsideset;i++){
     if(sideset[i].ngid){
       el  = sideset[i].num;
@@ -938,7 +981,23 @@ void write_restricion(FILE *f)
       fprintf(f,"\n");
     } 
   }
-  fprintf(f,"end faceR1\n"); 
+  fprintf(f,"endFaceT1\n"); 
+//  
+  fprintf(f,"faceLoadT1\n");
+  for(i=0;i<nsideset;i++){
+    if(sideset[i].ngid){
+      el  = sideset[i].num;
+//      nel =  elemt[el-1].num;  
+      fprintf(f,"%10d ",nel);
+      for(j=0;j<elemt[nel-1].nen+1;j++){
+        side = sideset[i].side[j];
+        fprintf(f,"%3d ",side);
+      }
+      fprintf(f,"\n");
+    } 
+  }
+  fprintf(f,"endFaceLoadT1\n"); 
+  return;
    
   fprintf(f,"nodalsources\n");
   for(i=0;i<nnodeset;i++){
@@ -951,7 +1010,6 @@ void write_restricion(FILE *f)
   
   fprintf(f,"end nodalsources\n");
   fprintf(f,"return\n");
-  return;
 
   fprintf(stderr,"\nconstraintemp...");
   fprintf(f,"constraintemp\n");
@@ -1358,7 +1416,7 @@ static void trocaFace(void){
         sideset[i].side[0] =  temp[0];
         sideset[i].side[1] =  temp[3];
         sideset[i].side[2] =  temp[1];
-        sideset[i].side[3] =  temp[2];
+        sideset[i].side[3] =  temp[2];  
       break;
     }
   }
@@ -1367,7 +1425,7 @@ static void trocaFace(void){
 }
 
 /********************************************************************* 
- * chanceFace                                                        * 
+ * trocaFaceMvf                                                      * 
  *-------------------------------------------------------------------* 
  * Parametros de entrada:                                            * 
  *-------------------------------------------------------------------* 
@@ -1389,6 +1447,17 @@ static void trocaFaceMvf(void){
     tp=elemt[el-1].type;
     switch (tp){
 /*tetraedro*/
+      case TETRA4: 
+        temp[0]            = sideset[i].side[0];
+        temp[1]            = sideset[i].side[1];
+        temp[2]            = sideset[i].side[2];
+        temp[3]            = sideset[i].side[3];
+        sideset[i].side[0] =  temp[1];
+        sideset[i].side[1] =  temp[2];
+        sideset[i].side[2] =  temp[0];
+        sideset[i].side[3] =  temp[3];  
+      break;
+/*hexaedros*/
       case HEXA8: 
         temp[0]            = sideset[i].side[0];
         temp[1]            = sideset[i].side[1];

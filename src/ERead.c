@@ -1,6 +1,7 @@
 #include<Eglobal.h>
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 
 /*********************************************************************/
 void read_exo(char *file_name)
@@ -57,13 +58,13 @@ void read_exo(char *file_name)
 /*===lendo carregamentos*/
   fprintf(stderr,"Lendo carregamentos por no...\n");
   read_carg_node_exo(exoid);
-  fprintf(stderr,"carregamentos.\n");
+  fprintf(stderr,"carregamentos por no lido.\n");
 /*===================================================================*/
 
 /*===lendo carregamentos*/
   fprintf(stderr,"Lendo carregamentos por face...\n");
   read_carg_side_exo(exoid);
-  fprintf(stderr,"carregamentos.\n");
+  fprintf(stderr,"carregamentos por face lido.\n");
 /*===================================================================*/
 /**/
 /*===fechando arquivo*/
@@ -338,6 +339,7 @@ void read_carg_side_exo(int exoid){
   int num_total,numdf,numset;
   float fdum;
   char *cdum;
+
 /*===================================================================*/  
   
 /*===*/  
@@ -396,7 +398,6 @@ void read_carg_side_exo(int exoid){
           ,i+1,elem_list[i],side_list[i],id[i]);
   }
 #endif
-  
   insertionsort3Vector(elem_list,side_list,id,num_total);
   repsideset     = (char*) calloc (num_total,sizeof(char));
   ERROR_MALLOC(repsideset,__LINE__,__func__,__FILE__);
@@ -410,11 +411,11 @@ void read_carg_side_exo(int exoid){
 #endif
   sideset = (SIDESET *) calloc(nsideset,sizeof(SIDESET));
   ERROR_MALLOC(sideset,__LINE__,__func__,__FILE__);
-  for(i=0;i<num_total;i++)
+  for(i=0;i<nsideset;i++)
     for(j=0;j<MAX_FACE;j++)
       sideset[i].side[j] = 0;
-
   k = -1;
+
   for(i=0;i<num_total;i++){
     if(!repsideset[i]){
       k++;
@@ -425,16 +426,16 @@ void read_carg_side_exo(int exoid){
     }
     else{  
       sideset[k].side[side_list[i]-1] = id[i];
-      nodeset[k].gid[id[i]-1]         = 1;
+      sideset[k].gid[id[i]-1]         = 1;
       sideset[k].ngid++;
     }  
   }
+
   free(repsideset);
   free(ids);
   free(id);
   free(side_list);
   free(elem_list);
-  
 #if _DEBUG
   for(i=0;i<nsideset;i++){
     printf("%d elem %d ",i+1,sideset[i].num);
